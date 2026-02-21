@@ -1,4 +1,8 @@
 RewriteEngine On
-RewriteRule ^$ public/ [L]
-RewriteRule ^api/(.*)$ index.php/$1 [L]
-RewriteRule ^(.*)$ public/$1 [L]
+
+# Если запрашивается существующий файл или папка - не перенаправляем
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Все остальные запросы идут на index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
