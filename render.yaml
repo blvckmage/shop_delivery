@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kazyna-market
+    env: docker
+    plan: free
+    buildFilter:
+      paths:
+        - .
+    envVars:
+      - key: PHP_VERSION
+        value: "8.2"
