@@ -1,0 +1,16 @@
+{
+    "name": "kazyna/market",
+    "description": "Kazyna Market - E-commerce platform",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\Core\\": "app/Core/",
+            "App\\Router\\": "app/Router/",
+            "App\\Models\\": "app/Models/",
+            "App\\Controllers\\": "app/Controllers/"
+        }
+    },
+    "require": {
+        "php": ">=8.0"
+    }
+}

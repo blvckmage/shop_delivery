@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteRule ^$ public/ [L]
+RewriteRule ^api/(.*)$ index.php/$1 [L]
+RewriteRule ^(.*)$ public/$1 [L]

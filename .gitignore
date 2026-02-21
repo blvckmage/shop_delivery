@@ -1,0 +1,40 @@
+# Cache files
+cache_*
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# PHP error logs
+error_log
+
+# Uploads directory (contains user uploads)
+public/uploads/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Node modules (if any)
+node_modules/
+
+# Composer vendor (if any)
+vendor/
