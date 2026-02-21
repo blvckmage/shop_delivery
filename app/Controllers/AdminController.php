@@ -421,4 +421,149 @@ class AdminController extends Controller
             'orders_by_status' => $orderStats['by_status']
         ]);
     }
+    
+    // ==================== ЭКСПОРТ ====================
+    
+    /**
+     * API: Экспорт отчёта
+     */
+    public function exportReport(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $format = $request->get('format', 'excel');
+        $period = intval($request->get('period', 30));
+        
+        $orders = $this->orderModel->getRecent($period);
+        
+        if ($format === 'pdf') {
+            return $this->exportPdf($orders, 'Отчёт по заказам');
+        }
+        
+        return $this->exportExcel($orders, 'orders_report');
+    }
+    
+    /**
+     * API: Экспорт архива
+     */
+    public function exportArchive(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $format = $request->get('format', 'excel');
+        
+        $archive = $this->orderModel->getArchive();
+        
+        if ($format === 'pdf') {
+            return $this->exportPdf($archive, 'Архив заказов');
+        }
+        
+        return $this->exportExcel($archive, 'archive_report');
+    }
+    
+    /**
+     * Экспорт в Excel (CSV)
+     */
+    private function exportExcel(array $data, string $filename): Response
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"'
+        ];
+        
+        $output = fopen('php://temp', 'r+');
+        
+        // BOM for UTF-8
+        fwrite($output, "\xEF\xBB\xBF");
+        
+        // Header row
+        fputcsv($output, ['ID', 'Пользователь', 'Адрес', 'Статус', 'Сумма', 'Дата создания'], ';');
+        
+        $userMap = [];
+        $users = $this->userModel->getAll();
+        foreach ($users as $user) {
+            $userMap[$user['id']] = $user['name'];
+        }
+        
+        foreach ($data as $row) {
+            fputcsv($output, [
+                $row['id'],
+                $userMap[$row['user_id']] ?? 'Неизвестный',
+                $row['address'],
+                $row['status'],
+                $row['total_price'],
+                $row['created_at']
+            ], ';');
+        }
+        
+        rewind($output);
+        $content = stream_get_contents($output);
+        fclose($output);
+        
+        return new Response($content, 200, $headers);
+    }
+    
+    /**
+     * Экспорт в PDF (простой HTML)
+     */
+    private function exportPdf(array $data, string $title): Response
+    {
+        $userMap = [];
+        $users = $this->userModel->getAll();
+        foreach ($users as $user) {
+            $userMap[$user['id']] = $user['name'];
+        }
+        
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>' . $title . '</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4F46E5; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>' . $title . '</h1>
+    <p>Дата: ' . date('d.m.Y H:i') . '</p>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Пользователь</th>
+            <th>Адрес</th>
+            <th>Статус</th>
+            <th>Сумма</th>
+            <th>Дата</th>
+        </tr>';
+        
+        foreach ($data as $row) {
+            $html .= '<tr>
+                <td>' . $row['id'] . '</td>
+                <td>' . htmlspecialchars($userMap[$row['user_id']] ?? 'Неизвестный') . '</td>
+                <td>' . htmlspecialchars($row['address']) . '</td>
+                <td>' . htmlspecialchars($row['status']) . '</td>
+                <td>' . $row['total_price'] . ' ₸</td>
+                <td>' . $row['created_at'] . '</td>
+            </tr>';
+        }
+        
+        $html .= '</table>
+</body>
+</html>';
+        
+        return new Response($html, 200, [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="report.html"'
+        ]);
+    }
 }

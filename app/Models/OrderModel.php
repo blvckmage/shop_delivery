@@ -241,6 +241,19 @@ class OrderModel
     }
     
     /**
+     * Получить заказы за последние N дней
+     */
+    public function getRecent(int $days = 30): array
+    {
+        $orders = $this->getAll();
+        $cutoffDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+        
+        return array_filter($orders, function($order) use ($cutoffDate) {
+            return $order['created_at'] >= $cutoffDate;
+        });
+    }
+    
+    /**
      * Проверить доступность заказа для курьера
      */
     public function isAvailableForCourier(int $id): bool

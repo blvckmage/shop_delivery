@@ -174,6 +174,13 @@ $router->delete('/api/admin/users/{id}', [App\Controllers\AdminController::class
 // Статистика
 $router->get('/api/admin/stats', [App\Controllers\AdminController::class, 'getStats']);
 
+// Экспорт
+$router->get('/api/admin/export', [App\Controllers\AdminController::class, 'exportReport']);
+$router->get('/api/admin/archive/export', [App\Controllers\AdminController::class, 'exportArchive']);
+
+// Архив (восстановление)
+$router->post('/api/admin/archive/{id}/restore', [App\Controllers\AdminController::class, 'restoreOrder']);
+
 // Курьеры (админ)
 $router->get('/api/admin/couriers', [App\Controllers\ApiController::class, 'adminCouriers']);
 $router->get('/api/admin/courier-requests', [App\Controllers\ApiController::class, 'adminCourierRequests']);
