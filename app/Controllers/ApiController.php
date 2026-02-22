@@ -609,7 +609,53 @@ class ApiController extends Controller
         
         $chat[] = $message;
         $this->db->write('chat', $chat);
-        
+
         return $this->json(['success' => true]);
+    }
+    
+    /**
+     * API: Отслеживание заказа
+     */
+    public function orderTracking(Request $request, int $orderId): Response
+    {
+        $orderModel = new \App\Models\OrderModel($this->db);
+        $order = $orderModel->findById($orderId);
+        
+        if ($order === null) {
+            return $this->error('Заказ не найден', 404);
+        }
+        
+        $result = [
+            'order' => $order,
+            'courier' => null,
+            'courier_location' => null,
+            'statusHistory' => [
+                ['status' => $order['status'], 'updated_at' => $order['created_at']]
+            ]
+        ];
+        
+        // Если есть курьер, получаем его данные
+        if (!empty($order['courier_id'])) {
+            $userModel = new \App\Models\UserModel($this->db);
+            $courier = $userModel->findById($order['courier_id']);
+            if ($courier) {
+                $result['courier'] = [
+                    'name' => $courier['name'],
+                    'phone' => $courier['phone']
+                ];
+                
+                // Получаем местоположение курьера
+                $courierLocations = $this->db->findBy('courier', 'courier_id', $order['courier_id']);
+                if (!empty($courierLocations)) {
+                    $lastLocation = end($courierLocations);
+                    $result['courier_location'] = [
+                        'lat' => $lastLocation['lat'] ?? 43.518703,
+                        'lng' => $lastLocation['lng'] ?? 68.505423
+                    ];
+                }
+            }
+        }
+        
+        return $this->json($result);
     }
 }

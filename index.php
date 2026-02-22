@@ -116,6 +116,7 @@ $router->post('/api/orders', [App\Controllers\OrderController::class, 'create'])
 $router->get('/api/orders', [App\Controllers\OrderController::class, 'getMy']);
 $router->get('/api/orders/my', [App\Controllers\OrderController::class, 'getMy']);
 $router->get('/api/orders/{id}', [App\Controllers\OrderController::class, 'getById']);
+$router->get('/api/orders/{id}/tracking', [App\Controllers\ApiController::class, 'orderTracking']);
 
 // ==================== API: ГЕОКОДИРОВАНИЕ ====================
 
