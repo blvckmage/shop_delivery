@@ -103,7 +103,10 @@
                     <div class="bg-white/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
                             <h2 class="text-xl md:text-2xl font-bold text-gray-800">🗺️ Карта</h2>
-                            <button id="toStoreBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg transition-colors duration-200 text-sm">📍 Магазин</button>
+                            <div class="flex space-x-2">
+                                <button id="toStoreBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg transition-colors duration-200 text-sm">📍 Магазин</button>
+                                <button id="toClientBtn" class="bg-green-500 hover:bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg transition-colors duration-200 text-sm">👤 Клиент</button>
+                            </div>
                         </div>
                         <div id="map" class="w-full h-64 md:h-96 rounded-xl"></div>
                     </div>
