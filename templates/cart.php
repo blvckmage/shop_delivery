@@ -471,7 +471,7 @@
             if (!confirm('Вы уверены, что хотите удалить этот товар из корзины?')) return;
 
             try {
-                const response = await fetch(`/api/cart/remove/${parseInt(productId)}`, {
+                const response = await fetch(`/api/cart/${parseInt(productId)}`, {
                     method: 'DELETE'
                 });
 
