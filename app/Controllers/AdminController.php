@@ -397,6 +397,50 @@ class AdminController extends Controller
         return $this->json(['success' => true]);
     }
     
+    /**
+     * API: Создать пользователя (админ)
+     */
+    public function createUser(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $data = $request->json();
+        
+        // Валидация
+        $validator = Validator::make($data, [
+            'name' => 'required,min:2',
+            'phone' => 'required',
+            'password' => 'required,min:4'
+        ]);
+        
+        if (!$validator->validate()) {
+            return $this->error($validator->getFirstError(), 400);
+        }
+        
+        // Проверка на дубликат телефона
+        $existingUser = $this->userModel->findByPhone($data['phone']);
+        if ($existingUser !== null) {
+            return $this->error('Пользователь с таким телефоном уже существует', 409);
+        }
+        
+        // Создание пользователя
+        $userId = $this->userModel->create([
+            'name' => Security::sanitize($data['name']),
+            'phone' => Security::sanitize($data['phone']),
+            'email' => Security::sanitize($data['email'] ?? ''),
+            'password' => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]),
+            'role' => $data['role'] ?? 'user'
+        ]);
+        
+        return $this->json([
+            'success' => true,
+            'user_id' => $userId
+        ]);
+    }
+    
     // ==================== СТАТИСТИКА ====================
     
     /**

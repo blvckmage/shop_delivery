@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Kazyna Market - Главный файл приложения
+ * Delivery - Главный файл приложения
  * 
  * Точка входа в приложение с MVC архитектурой
  */
@@ -169,6 +169,7 @@ $router->get('/api/admin/archive', [App\Controllers\AdminController::class, 'get
 
 // Пользователи
 $router->get('/api/admin/users', [App\Controllers\AdminController::class, 'getUsers']);
+$router->post('/api/admin/users', [App\Controllers\AdminController::class, 'createUser']);
 $router->put('/api/admin/users/{id}', [App\Controllers\AdminController::class, 'updateUser']);
 $router->delete('/api/admin/users/{id}', [App\Controllers\AdminController::class, 'deleteUser']);
 

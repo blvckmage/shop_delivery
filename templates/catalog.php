@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог - Kazyna Market</title>
+    <title>Каталог - Delivery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -59,7 +59,7 @@
                         <span class="text-white font-bold text-lg">K</span>
                     </div>
                     <a href="/" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
-                        Kazyna Market
+                        Delivery
                     </a>
                 </div>
 
@@ -323,7 +323,7 @@
     <!-- Footer -->
     <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 mt-12">
         <div class="container mx-auto px-4 text-center">
-            <p>&copy; <?php echo date('Y'); ?> Kazyna Market. Все права защищены.</p>
+            <p>&copy; <?php echo date('Y'); ?> Delivery. Все права защищены.</p>
         </div>
     </footer>
 

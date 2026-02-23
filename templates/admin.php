@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ панель - Kazyna Market</title>
+    <title>Админ панель - Delivery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -419,7 +419,12 @@
         <!-- Users Tab -->
         <div id="users-tab" class="tab-content hidden">
             <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Управление пользователями</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Управление пользователями</h2>
+                    <button onclick="showCreateUserModal()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+                        + Добавить пользователя
+                    </button>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full table-auto">
                         <thead>
@@ -689,6 +694,47 @@
                         </button>
                         <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">
                             Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Create User Modal -->
+        <div id="createUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-bold mb-4">Добавить пользователя</h3>
+                <form id="createUserForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Имя *</label>
+                        <input type="text" id="newUserName" name="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Телефон *</label>
+                        <input type="tel" id="newUserPhone" name="phone" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="newUserEmail" name="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Пароль *</label>
+                        <input type="password" id="newUserPassword" name="password" required minlength="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Роль</label>
+                        <select id="newUserRole" name="role" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                            <option value="user">Пользователь</option>
+                            <option value="courier">Курьер</option>
+                            <option value="admin">Админ</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                            Отмена
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">
+                            Создать
                         </button>
                     </div>
                 </form>
@@ -1919,6 +1965,9 @@
             document.getElementById('tab-' + tab).classList.add('border-purple-500', 'text-purple-600');
             currentTab = tab;
             
+            // Save current tab to localStorage
+            localStorage.setItem('adminCurrentTab', tab);
+            
             // Load data for specific tabs
             if (tab === 'courier-requests') {
                 loadCourierRequests();
@@ -1936,6 +1985,59 @@
                 document.getElementById('chatMessages').innerHTML = '<div class="text-center text-gray-500 py-8">Выберите пользователя из списка слева</div>';
             }
         }
+        
+        // Create User Modal functions
+        function showCreateUserModal() {
+            document.getElementById('createUserForm').reset();
+            document.getElementById('createUserModal').classList.remove('hidden');
+        }
+        
+        function closeCreateUserModal() {
+            document.getElementById('createUserModal').classList.add('hidden');
+        }
+        
+        // Create user form submission
+        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                phone: formData.get('phone'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                role: formData.get('role')
+            };
+            
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Пользователь успешно создан!', 'success');
+                    closeCreateUserModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Ошибка при создании пользователя', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert('Ошибка сети', 'error');
+            }
+        });
+        
+        // Restore tab on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTab = localStorage.getItem('adminCurrentTab');
+            if (savedTab && savedTab !== 'categories') {
+                showTab(savedTab);
+            }
+        });
     </script>
 </body>
 </html>

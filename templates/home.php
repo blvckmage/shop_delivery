@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kazyna Market - Лучшие продукты для вас</title>
+    <title>Delivery - Лучшие продукты для вас</title>
     <?php echo $csrfMeta; ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -57,7 +57,7 @@
                         <span class="text-white font-bold text-lg">K</span>
                     </div>
                     <a href="/" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
-                        Kazyna Market
+                        Delivery
                     </a>
                 </div>
 
@@ -144,7 +144,7 @@
         <div class="w-full px-4 py-20">
             <div class="text-center max-w-4xl mx-auto animate-fade-in">
                 <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-yellow-600 bg-clip-text text-transparent">
-                    Добро пожаловать в Kazyna Market
+                    Добро пожаловать в Delivery
                 </h1>
                 <p class="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
                     Откройте для себя мир свежих продуктов и качественных товаров.
@@ -199,7 +199,7 @@
                         <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-lg flex items-center justify-center">
                             <span class="text-white font-bold">K</span>
                         </div>
-                        <span class="text-xl font-bold">Kazyna Market</span>
+                        <span class="text-xl font-bold">Delivery</span>
                     </div>
                     <p class="text-gray-400">Ваш надежный партнер в мире качественных продуктов</p>
                 </div>
@@ -233,7 +233,7 @@
             </div>
 
             <div class="border-t border-gray-700 mt-8 pt-8 text-center">
-                <p>&copy; <?php echo date('Y'); ?> Kazyna Market. Все права защищены.</p>
+                <p>&copy; <?php echo date('Y'); ?> Delivery. Все права защищены.</p>
             </div>
         </div>
     </footer>

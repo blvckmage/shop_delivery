@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚚 Курьер - Kazyna Market</title>
+    <title>🚚 Курьер - Delivery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -38,7 +38,7 @@
                         <span class="text-white font-bold text-lg">🚚</span>
                     </div>
                     <a href="/" class="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
-                        Kazyna Market
+                        Delivery
                     </a>
                 </div>
 

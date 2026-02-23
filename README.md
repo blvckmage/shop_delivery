@@ -1,4 +1,4 @@
-# Kazyna Market - PHP E-commerce Application
+# Delivery - PHP E-commerce Application
 
 Простое веб-приложение для электронной коммерции, разработанное на чистом PHP без использования фреймворков.
 
