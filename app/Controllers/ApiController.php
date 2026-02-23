@@ -58,7 +58,7 @@ class ApiController extends Controller
     }
     
     /**
-     * API: Взять заказ курьером
+     * API: Взять заказ курьером (отправить запрос)
      */
     public function courierTakeOrder(Request $request, int $id): Response
     {
@@ -72,8 +72,17 @@ class ApiController extends Controller
             return $this->error('Заказ недоступен', 400);
         }
         
-        // Назначаем курьера
-        $this->orderModel->assignCourier($id, $this->getUserId());
+        // Сохраняем запрос курьера (не назначаем сразу)
+        $this->orderModel->update($id, ['courier_request_id' => $this->getUserId()]);
+        
+        // Уведомление для админов о запросе заказа курьером
+        self::notifyAdmins(
+            $this->db,
+            'courier_request',
+            'Запрос на заказ',
+            "Курьер {$this->getUser()['name']} запросил заказ #{$id}",
+            ['order_id' => $id, 'courier_id' => $this->getUserId()]
+        );
         
         return $this->json(['success' => true]);
     }
@@ -103,6 +112,47 @@ class ApiController extends Controller
         
         $this->orderModel->updateStatus($id, $data['status']);
         
+        // Получаем заказ для уведомлений
+        $order = $this->orderModel->findById($id);
+        
+        // Если статус "ДОСТАВЛЕН" - перемещаем заказ в архив
+        if ($data['status'] === OrderModel::STATUS_DELIVERED) {
+            $this->orderModel->archive($id);
+            
+            // Уведомление для пользователя о доставке
+            if ($order) {
+                self::notifyUser(
+                    $this->db,
+                    $order['user_id'],
+                    'order_delivered',
+                    'Заказ доставлен!',
+                    "Ваш заказ #{$id} успешно доставлен! Спасибо за покупку!",
+                    ['order_id' => $id]
+                );
+            }
+            
+            // Уведомление для админов о доставке
+            self::notifyAdmins(
+                $this->db,
+                'order_delivered',
+                'Заказ доставлен',
+                "Заказ #{$id} успешно доставлен курьером",
+                ['order_id' => $id]
+            );
+        } elseif ($data['status'] === OrderModel::STATUS_ON_THE_WAY) {
+            // Уведомление для пользователя о том, что курьер в пути
+            if ($order) {
+                self::notifyUser(
+                    $this->db,
+                    $order['user_id'],
+                    'order_status',
+                    'Курьер в пути',
+                    "Курьер уже везет ваш заказ #{$id}!",
+                    ['order_id' => $id]
+                );
+            }
+        }
+        
         return $this->json(['success' => true]);
     }
     
@@ -123,6 +173,15 @@ class ApiController extends Controller
         
         // Сбрасываем курьера и статус
         $this->orderModel->updateStatus($id, OrderModel::STATUS_WAITING_COURIER);
+        
+        // Уведомление для админов об отмене заказа курьером
+        self::notifyAdmins(
+            $this->db,
+            'courier_cancelled',
+            'Курьер отменил заказ',
+            "Курьер {$this->getUser()['name']} отменил заказ #{$id}",
+            ['order_id' => $id]
+        );
         
         return $this->json(['success' => true]);
     }
@@ -290,14 +349,13 @@ class ApiController extends Controller
         
         $requests = [];
         foreach ($orders as $o) {
-            // Показываем только заказы в статусе ОЖИДАНИЕ_КУРЬЕРА с назначенным курьером
-            // или заказы которые курьер запросил (В_ПУТИ но еще не доставлен)
-            if (isset($o['courier_id']) && $o['courier_id'] && 
-                in_array($o['status'], [OrderModel::STATUS_WAITING_COURIER, OrderModel::STATUS_ON_THE_WAY])) {
-                $courier = $userMap[$o['courier_id']] ?? null;
+            // Показываем заказы с запросом от курьера (courier_request_id), но еще не назначенные
+            if (!empty($o['courier_request_id']) && empty($o['courier_id']) && 
+                $o['status'] === OrderModel::STATUS_ON_THE_WAY) {
+                $courier = $userMap[$o['courier_request_id']] ?? null;
                 $requests[] = [
                     'order_id' => $o['id'],
-                    'courier_id' => $o['courier_id'],
+                    'courier_id' => $o['courier_request_id'],
                     'courier_name' => $courier['name'] ?? 'Неизвестный',
                     'order_address' => $o['address'],
                     'status' => $o['status'],
@@ -445,9 +503,66 @@ class ApiController extends Controller
             return $this->error('Неверный ID курьера', 400);
         }
         
-        // Назначаем курьера на заказ
-        $this->orderModel->assignCourier($id, $courierId);
-        $this->orderModel->updateStatus($id, OrderModel::STATUS_ON_THE_WAY);
+        // Переносим запрос в назначение: назначаем курьера и очищаем запрос
+        $this->orderModel->update($id, [
+            'courier_id' => $courierId,
+            'courier_request_id' => null
+        ]);
+        
+        // Уведомление для курьера о назначении заказа
+        self::notifyCourier(
+            $this->db,
+            $courierId,
+            'order_assigned',
+            'Заказ назначен',
+            "Вам назначен заказ #{$id}. Заберите его в магазине!",
+            ['order_id' => $id]
+        );
+        
+        // Уведомление для пользователя о смене статуса
+        $order = $this->orderModel->findById($id);
+        if ($order) {
+            self::notifyUser(
+                $this->db,
+                $order['user_id'],
+                'order_status',
+                'Заказ в пути',
+                "Ваш заказ #{$id} передан курьеру и уже в пути!",
+                ['order_id' => $id]
+            );
+        }
+        
+        return $this->json(['success' => true]);
+    }
+    
+    /**
+     * API: Отклонить запрос курьера
+     */
+    public function rejectCourierRequest(Request $request, int $id): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        // Получаем заказ для уведомления курьера
+        $order = $this->orderModel->findById($id);
+        $courierId = $order['courier_request_id'] ?? null;
+        
+        // Очищаем запрос курьера
+        $this->orderModel->update($id, ['courier_request_id' => null]);
+        
+        // Уведомление для курьера об отклонении
+        if ($courierId) {
+            self::notifyCourier(
+                $this->db,
+                $courierId,
+                'request_rejected',
+                'Запрос отклонен',
+                "Ваш запрос на заказ #{$id} был отклонен.",
+                ['order_id' => $id]
+            );
+        }
         
         return $this->json(['success' => true]);
     }
@@ -466,7 +581,7 @@ class ApiController extends Controller
         
         // Сбрасываем курьера если отклоняем запрос
         if (isset($data['courier_id']) && $data['courier_id'] === null) {
-            $this->orderModel->update($id, ['courier_id' => null]);
+            $this->orderModel->update($id, ['courier_id' => null, 'courier_request_id' => null]);
         }
         
         return $this->json(['success' => true]);
@@ -614,6 +729,34 @@ class ApiController extends Controller
     }
     
     /**
+     * API: История заказов курьера (доставленные)
+     */
+    public function courierHistory(Request $request): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        // Получаем архив заказов через модель (с декодированием items)
+        $archive = $this->orderModel->getArchive();
+        $courierId = $this->getUserId();
+        
+        // Фильтруем заказы текущего курьера (только доставленные)
+        $history = array_filter($archive, function($order) use ($courierId) {
+            return isset($order['courier_id']) && $order['courier_id'] == $courierId
+                && ($order['status'] === OrderModel::STATUS_DELIVERED || $order['status'] === 'ДОСТАВЛЕН');
+        });
+        
+        // Сортируем по дате (новые первые)
+        usort($history, function($a, $b) {
+            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+        });
+        
+        return $this->json(array_values($history));
+    }
+    
+    /**
      * API: Отслеживание заказа
      */
     public function orderTracking(Request $request, int $orderId): Response
@@ -657,5 +800,382 @@ class ApiController extends Controller
         }
         
         return $this->json($result);
+    }
+    
+    // ==================== УВЕДОМЛЕНИЯ ====================
+    
+    /**
+     * API: Получить уведомления пользователя (обычные пользователи)
+     */
+    public function getNotifications(Request $request): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $userRole = $this->getUser()['role'] ?? 'user';
+        
+        // Для админов возвращаем админские уведомления
+        if ($userRole === 'admin') {
+            return $this->getAdminNotifications($request);
+        }
+        
+        // Для курьеров возвращаем курьерские уведомления
+        if ($userRole === 'courier') {
+            return $this->getCourierNotifications($request);
+        }
+        
+        // Для обычных пользователей
+        return $this->getUserNotifications($request);
+    }
+    
+    /**
+     * API: Уведомления для обычного пользователя
+     */
+    public function getUserNotifications(Request $request): Response
+    {
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        
+        $userNotifications = array_filter($notifications, function($n) use ($userId) {
+            // Уведомления для всех пользователей
+            if (isset($n['for_all']) && $n['for_all']) {
+                // Для пользователей проверяем read_by
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            // Личные уведомления пользователя
+            if (isset($n['user_id']) && $n['user_id'] == $userId && empty($n['read'])) {
+                return true;
+            }
+            // Уведомления для всех пользователей (не для ролей)
+            if (isset($n['for_users']) && $n['for_users'] === true) {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            return false;
+        });
+        
+        usort($userNotifications, function($a, $b) {
+            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+        });
+        
+        return $this->json(array_values($userNotifications));
+    }
+    
+    /**
+     * API: Уведомления для админа
+     */
+    public function getAdminNotifications(Request $request): Response
+    {
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        
+        $adminNotifications = array_filter($notifications, function($n) use ($userId) {
+            // Уведомления для админов
+            if (isset($n['for_role']) && $n['for_role'] === 'admin') {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            // Уведомления для всех админов
+            if (isset($n['for_admins']) && $n['for_admins'] === true) {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            return false;
+        });
+        
+        usort($adminNotifications, function($a, $b) {
+            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+        });
+        
+        return $this->json(array_values($adminNotifications));
+    }
+    
+    /**
+     * API: Уведомления для курьера
+     */
+    public function getCourierNotifications(Request $request): Response
+    {
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        
+        $courierNotifications = array_filter($notifications, function($n) use ($userId) {
+            // Уведомления для курьеров
+            if (isset($n['for_role']) && $n['for_role'] === 'courier') {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            // Уведомления для всех курьеров
+            if (isset($n['for_couriers']) && $n['for_couriers'] === true) {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            // Личные уведомления курьера
+            if (isset($n['user_id']) && $n['user_id'] == $userId && empty($n['read'])) {
+                return true;
+            }
+            return false;
+        });
+        
+        usort($courierNotifications, function($a, $b) {
+            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+        });
+        
+        return $this->json(array_values($courierNotifications));
+    }
+    
+    /**
+     * API: Получить количество непрочитанных уведомлений
+     */
+    public function getUnreadCount(Request $request): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        $userRole = $this->getUser()['role'] ?? 'user';
+        
+        $unreadCount = count(array_filter($notifications, function($n) use ($userId, $userRole) {
+            if (!empty($n['read'])) {
+                return false;
+            }
+            
+            if (isset($n['for_all']) && $n['for_all']) {
+                // Проверяем, прочитал ли конкретный пользователь
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            if (isset($n['user_id']) && $n['user_id'] == $userId) {
+                return true;
+            }
+            if (isset($n['for_role']) && $n['for_role'] === $userRole) {
+                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
+            }
+            return false;
+        }));
+        
+        return $this->json(['count' => $unreadCount]);
+    }
+    
+    /**
+     * API: Пометить уведомление как прочитанное
+     */
+    public function markNotificationRead(Request $request, int $id): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        
+        foreach ($notifications as &$n) {
+            if ($n['id'] == $id) {
+                if (isset($n['for_all']) && $n['for_all']) {
+                    $n['read_by'] = $n['read_by'] ?? [];
+                    if (!in_array($userId, $n['read_by'])) {
+                        $n['read_by'][] = $userId;
+                    }
+                } else {
+                    $n['read'] = true;
+                }
+                break;
+            }
+        }
+        
+        $this->db->write('notifications', $notifications);
+        
+        return $this->json(['success' => true]);
+    }
+    
+    /**
+     * API: Пометить все уведомления как прочитанные
+     */
+    public function markAllNotificationsRead(Request $request): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $notifications = $this->db->read('notifications');
+        $userId = $this->getUserId();
+        $userRole = $this->getUser()['role'] ?? 'user';
+        
+        foreach ($notifications as &$n) {
+            $isForUser = false;
+            
+            if (isset($n['for_all']) && $n['for_all']) {
+                $isForUser = true;
+            } elseif (isset($n['user_id']) && $n['user_id'] == $userId) {
+                $isForUser = true;
+            } elseif (isset($n['for_role']) && $n['for_role'] === $userRole) {
+                $isForUser = true;
+            }
+            
+            if ($isForUser) {
+                if (isset($n['for_all']) && $n['for_all']) {
+                    $n['read_by'] = $n['read_by'] ?? [];
+                    if (!in_array($userId, $n['read_by'])) {
+                        $n['read_by'][] = $userId;
+                    }
+                } else {
+                    $n['read'] = true;
+                }
+            }
+        }
+        
+        $this->db->write('notifications', $notifications);
+        
+        return $this->json(['success' => true]);
+    }
+    
+    /**
+     * Создать уведомление (вспомогательный метод)
+     */
+    public static function createNotification(
+        \App\Core\Database $db, 
+        string $type, 
+        string $title, 
+        string $message, 
+        ?int $userId = null, 
+        ?string $forRole = null, 
+        bool $forAll = false,
+        ?array $data = null
+    ): void {
+        $notifications = $db->read('notifications');
+        
+        $notification = [
+            'id' => $db->getNextId('notifications'),
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'created_at' => date('c'),
+            'read' => false,
+            'read_by' => [],
+            'data' => $data
+        ];
+        
+        if ($forAll) {
+            $notification['for_all'] = true;
+            $notification['for_users'] = true;
+        } elseif ($userId !== null) {
+            $notification['user_id'] = $userId;
+        } elseif ($forRole !== null) {
+            $notification['for_role'] = $forRole;
+        }
+        
+        $notifications[] = $notification;
+        $db->write('notifications', $notifications);
+    }
+    
+    /**
+     * Создать уведомление для пользователя
+     */
+    public static function notifyUser(
+        \App\Core\Database $db,
+        int $userId,
+        string $type,
+        string $title,
+        string $message,
+        ?array $data = null
+    ): void {
+        self::createNotification($db, $type, $title, $message, $userId, null, false, $data);
+    }
+    
+    /**
+     * Создать уведомление для всех пользователей
+     */
+    public static function notifyAllUsers(
+        \App\Core\Database $db,
+        string $type,
+        string $title,
+        string $message,
+        ?array $data = null
+    ): void {
+        $notifications = $db->read('notifications');
+        
+        $notifications[] = [
+            'id' => $db->getNextId('notifications'),
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'created_at' => date('c'),
+            'read' => false,
+            'read_by' => [],
+            'for_users' => true,
+            'data' => $data
+        ];
+        
+        $db->write('notifications', $notifications);
+    }
+    
+    /**
+     * Создать уведомление для всех админов
+     */
+    public static function notifyAdmins(
+        \App\Core\Database $db,
+        string $type,
+        string $title,
+        string $message,
+        ?array $data = null
+    ): void {
+        $notifications = $db->read('notifications');
+        
+        $notifications[] = [
+            'id' => $db->getNextId('notifications'),
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'created_at' => date('c'),
+            'read' => false,
+            'read_by' => [],
+            'for_admins' => true,
+            'for_role' => 'admin',
+            'data' => $data
+        ];
+        
+        $db->write('notifications', $notifications);
+    }
+    
+    /**
+     * Создать уведомление для всех курьеров
+     */
+    public static function notifyCouriers(
+        \App\Core\Database $db,
+        string $type,
+        string $title,
+        string $message,
+        ?array $data = null
+    ): void {
+        $notifications = $db->read('notifications');
+        
+        $notifications[] = [
+            'id' => $db->getNextId('notifications'),
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'created_at' => date('c'),
+            'read' => false,
+            'read_by' => [],
+            'for_couriers' => true,
+            'for_role' => 'courier',
+            'data' => $data
+        ];
+        
+        $db->write('notifications', $notifications);
+    }
+    
+    /**
+     * Создать уведомление для конкретного курьера
+     */
+    public static function notifyCourier(
+        \App\Core\Database $db,
+        int $courierId,
+        string $type,
+        string $title,
+        string $message,
+        ?array $data = null
+    ): void {
+        self::createNotification($db, $type, $title, $message, $courierId, null, false, $data);
     }
 }

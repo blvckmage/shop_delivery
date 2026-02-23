@@ -79,7 +79,9 @@ class OrderModel
     {
         $orders = $this->getAll();
         return array_filter($orders, function($order) use ($courierId) {
-            return isset($order['courier_id']) && $order['courier_id'] == $courierId;
+            // Показываем только заказы со статусом В_ПУТИ для курьера
+            return isset($order['courier_id']) && $order['courier_id'] == $courierId
+                && $order['status'] === self::STATUS_ON_THE_WAY;
         });
     }
     
@@ -90,7 +92,8 @@ class OrderModel
     {
         $orders = $this->getAll();
         return array_filter($orders, function($order) {
-            return $order['status'] === self::STATUS_WAITING_COURIER 
+            // Показываем заказы со статусом В_ПУТИ без назначенного курьера
+            return $order['status'] === self::STATUS_ON_THE_WAY 
                 && empty($order['courier_id']);
         });
     }
@@ -109,7 +112,11 @@ class OrderModel
         $deliveryIncluded = !empty($data['delivery_included']);
         $deliveryPrice = $deliveryIncluded ? 500 : 0;
         
+        // Получаем глобально уникальный ID (учитывая и orders, и archive)
+        $id = $this->getNextGlobalId();
+        
         $order = [
+            'id' => $id,
             'user_id' => intval($data['user_id']),
             'items' => json_encode($items, JSON_UNESCAPED_UNICODE),
             'address' => Security::sanitize($data['address'] ?? ''),
@@ -121,7 +128,41 @@ class OrderModel
             'created_at' => date('c')
         ];
         
-        return $this->db->insert($this->table, $order);
+        // Добавляем заказ с уже установленным ID
+        $orders = $this->db->read($this->table);
+        $orders[] = $order;
+        $this->db->write($this->table, $orders);
+        
+        return $id;
+    }
+    
+    /**
+     * Получить следующий глобально уникальный ID
+     */
+    private function getNextGlobalId(): int
+    {
+        $orders = $this->db->read($this->table);
+        $archive = $this->db->read($this->archiveTable);
+        
+        $allIds = [];
+        
+        foreach ($orders as $order) {
+            if (isset($order['id'])) {
+                $allIds[] = $order['id'];
+            }
+        }
+        
+        foreach ($archive as $order) {
+            if (isset($order['id'])) {
+                $allIds[] = $order['id'];
+            }
+        }
+        
+        if (empty($allIds)) {
+            return 1;
+        }
+        
+        return max($allIds) + 1;
     }
     
     /**
@@ -183,7 +224,19 @@ class OrderModel
         }
         
         $order['archived_at'] = date('c');
-        $this->db->insert($this->archiveTable, $order);
+        
+        // Проверяем, существует ли уже запись с таким ID в архиве
+        $existingInArchive = $this->db->findById($this->archiveTable, $id);
+        
+        if ($existingInArchive !== null) {
+            // Если запись существует, обновляем её
+            $this->db->update($this->archiveTable, $id, $order);
+        } else {
+            // Иначе добавляем новую запись
+            if (!$this->db->insertWithId($this->archiveTable, $order)) {
+                return false;
+            }
+        }
         
         return $this->db->delete($this->table, $id);
     }
@@ -200,7 +253,11 @@ class OrderModel
         }
         
         unset($order['archived_at']);
-        $this->db->insert($this->table, $order);
+        
+        // Добавляем в заказы с сохранением ID
+        if (!$this->db->insertWithId($this->table, $order)) {
+            return false;
+        }
         
         return $this->db->delete($this->archiveTable, $id);
     }
@@ -261,7 +318,7 @@ class OrderModel
         $order = $this->db->findById($this->table, $id);
         
         return $order !== null 
-            && $order['status'] === self::STATUS_WAITING_COURIER
+            && $order['status'] === self::STATUS_ON_THE_WAY
             && empty($order['courier_id']);
     }
     
@@ -274,6 +331,7 @@ class OrderModel
         
         return $order !== null 
             && isset($order['courier_id']) 
-            && $order['courier_id'] == $courierId;
+            && $order['courier_id'] == $courierId
+            && $order['status'] === self::STATUS_ON_THE_WAY;
     }
 }

@@ -115,6 +115,7 @@ $router->post('/api/cart/clear', [App\Controllers\CartController::class, 'clear'
 $router->post('/api/orders', [App\Controllers\OrderController::class, 'create']);
 $router->get('/api/orders', [App\Controllers\OrderController::class, 'getMy']);
 $router->get('/api/orders/my', [App\Controllers\OrderController::class, 'getMy']);
+$router->get('/api/orders/history', [App\Controllers\OrderController::class, 'getMyHistory']);
 $router->get('/api/orders/{id}', [App\Controllers\OrderController::class, 'getById']);
 $router->get('/api/orders/{id}/tracking', [App\Controllers\ApiController::class, 'orderTracking']);
 
@@ -135,6 +136,7 @@ $router->put('/api/profile/update', [App\Controllers\SiteController::class, 'upd
 // ==================== API: КУРЬЕР ====================
 
 $router->get('/api/courier/orders', [App\Controllers\ApiController::class, 'courierOrders']);
+$router->get('/api/courier/history', [App\Controllers\ApiController::class, 'courierHistory']);
 $router->post('/api/courier/take/{id}', [App\Controllers\ApiController::class, 'courierTakeOrder']);
 $router->post('/api/orders/{id}/request', [App\Controllers\ApiController::class, 'courierTakeOrder']);
 $router->post('/api/courier/status/{id}', [App\Controllers\ApiController::class, 'courierUpdateStatus']);
@@ -188,6 +190,7 @@ $router->get('/api/admin/couriers', [App\Controllers\ApiController::class, 'admi
 $router->get('/api/admin/courier-requests', [App\Controllers\ApiController::class, 'adminCourierRequests']);
 $router->get('/api/admin/requests', [App\Controllers\ApiController::class, 'adminCourierRequests']);
 $router->post('/api/orders/{id}/confirm', [App\Controllers\ApiController::class, 'confirmCourierRequest']);
+$router->post('/api/orders/{id}/reject', [App\Controllers\ApiController::class, 'rejectCourierRequest']);
 
 // ==================== API: ЧАТ ====================
 
@@ -203,6 +206,13 @@ $router->get('/api/admin/chat/users', [App\Controllers\ApiController::class, 'ad
 $router->get('/api/admin/chat/messages/{userId}', [App\Controllers\ApiController::class, 'adminChatMessages']);
 $router->post('/api/admin/chat/messages', [App\Controllers\ApiController::class, 'adminChatSend']);
 $router->post('/api/admin/chat/send', [App\Controllers\ApiController::class, 'adminChatSend']);
+
+// ==================== API: УВЕДОМЛЕНИЯ ====================
+
+$router->get('/api/notifications', [App\Controllers\ApiController::class, 'getNotifications']);
+$router->get('/api/notifications/unread-count', [App\Controllers\ApiController::class, 'getUnreadCount']);
+$router->post('/api/notifications/{id}/read', [App\Controllers\ApiController::class, 'markNotificationRead']);
+$router->post('/api/notifications/read-all', [App\Controllers\ApiController::class, 'markAllNotificationsRead']);
 
 // ==================== ДИСПЕТЧЕРИЗАЦИЯ ====================
 

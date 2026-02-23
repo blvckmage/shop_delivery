@@ -263,13 +263,38 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Валидация статуса
-        if (!isset($data['status']) || !in_array($data['status'], OrderModel::VALID_STATUSES)) {
-            return $this->error('Неверный статус', 400);
+        // Валидация статуса (пустая строка означает "Заказ создан" = STATUS_CREATED)
+        $status = $data['status'] ?? '';
+        if ($status === '') {
+            $status = OrderModel::STATUS_CREATED;
         }
         
-        if (!$this->orderModel->updateStatus($id, $data['status'])) {
+        if (!in_array($status, OrderModel::VALID_STATUSES)) {
+            return $this->error('Неверный статус: ' . $status, 400);
+        }
+        
+        // Получаем заказ до обновления
+        $order = $this->orderModel->findById($id);
+        $previousStatus = $order['status'] ?? '';
+        
+        if (!$this->orderModel->updateStatus($id, $status)) {
             return $this->error('Заказ не найден', 404);
+        }
+        
+        // Уведомление курьеров о новом доступном заказе (статус изменился на В_ПУТИ)
+        if ($status === OrderModel::STATUS_ON_THE_WAY && $previousStatus !== OrderModel::STATUS_ON_THE_WAY) {
+            ApiController::notifyCouriers(
+                $this->db,
+                'new_order',
+                '📦 Новый заказ доступен!',
+                "Заказ #{$id} готов к доставке. Адрес: {$order['address']}",
+                ['order_id' => $id]
+            );
+        }
+        
+        // Если статус "ДОСТАВЛЕН" - перемещаем заказ в архив
+        if ($status === OrderModel::STATUS_DELIVERED) {
+            $this->orderModel->archive($id);
         }
         
         return $this->json(['success' => true]);

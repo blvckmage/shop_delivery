@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог - Delivery</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -22,7 +21,9 @@
                 }
             }
         }
-
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         // Custom animations
         const style = document.createElement('style');
         style.textContent = `
@@ -81,6 +82,13 @@
                     <?php if (($user['role'] ?? 'user') === 'admin'): ?>
                             <a href="/admin" class="text-purple-700 hover:text-purple-600 transition-colors duration-200 font-medium">⚙️ Админ</a>
                         <?php endif; ?>
+                        <!-- Notifications Bell -->
+                        <div class="relative">
+                            <button onclick="toggleNotifications()" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 relative">
+                                🔔
+                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
                         <div class="flex items-center space-x-3">
                             <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
                             <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
@@ -238,14 +246,14 @@
                                             <?php echo htmlspecialchars($product['price']); ?> ₸
                                         </div>
                                         <div class="text-xs text-gray-500">
-                                            <?php if (!empty($product['weight_unit'])): ?>
+                                            <?php if ($product['is_weighted']): ?>
+                                                за 1 кг
+                                            <?php elseif (!empty($product['weight_unit'])): ?>
                                                 за <?php 
                                                     $unit = $product['weight_unit'];
-                                                    // If it's a number (grams), convert properly
                                                     if (is_numeric($unit)) {
                                                         echo $unit >= 1000 ? ($unit / 1000) . 'кг' : $unit . 'г';
                                                     } else {
-                                                        // It's already a formatted string like "1 л"
                                                         echo htmlspecialchars($unit);
                                                     }
                                                 ?>
@@ -254,6 +262,13 @@
                                             <?php endif; ?>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Weight badge for weighted products -->
+                                    <?php if ($product['is_weighted']): ?>
+                                    <div class="mt-2 inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                        ⚖️ Весовой товар
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Add to Cart / Quantity Controls -->
@@ -267,25 +282,41 @@
                                         break;
                                     }
                                 }
+                                $isWeighted = $product['is_weighted'] ?? false;
                                 ?>
                                 <?php if ($cartItem): ?>
                                     <div class="w-full mt-6 flex items-center justify-center space-x-4 bg-green-50 p-3 rounded-xl border-2 border-green-200">
-                                        <button onclick="updateQuantityFromCatalog(<?php echo $product['id']; ?>, <?php echo $cartItem['quantity'] - 1; ?>)"
+                                        <button onclick="<?php echo $isWeighted ? 'showWeightModalForUpdate' : 'updateQuantityFromCatalog'; ?>(<?php echo $product['id']; ?>, <?php echo $isWeighted ? $cartItem['weight'] : $cartItem['quantity'] - 1; ?>)"
                                                 class="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 font-bold">
-                                            -
+                                            <?php echo $isWeighted ? '✎' : '-'; ?>
                                         </button>
                                         <span class="bg-white text-green-800 px-4 py-2 rounded-lg font-semibold min-w-[3rem] text-center border-2 border-green-200">
-                                            <?php echo $cartItem['quantity']; ?>
+                                            <?php 
+                                            if ($isWeighted && !empty($cartItem['weight'])) {
+                                                $weight = $cartItem['weight'];
+                                                echo $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
+                                            } else {
+                                                echo $cartItem['quantity'];
+                                            }
+                                            ?>
                                         </span>
+                                        <?php if (!$isWeighted): ?>
                                         <button onclick="updateQuantityFromCatalog(<?php echo $product['id']; ?>, <?php echo $cartItem['quantity'] + 1; ?>)"
                                                 class="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 font-bold">
                                             +
                                         </button>
+                                        <?php else: ?>
+                                        <button onclick="removeWeightedFromCart(<?php echo $product['id']; ?>)"
+                                                class="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 font-bold">
+                                            ✕
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 <?php else: ?>
-                                    <button onclick="addToCart(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>)"
-                                            class="w-full mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg animate-pulse-soft">
-                                        ➕ Добавить в корзину
+                                    <button onclick="<?php echo $isWeighted ? 'showWeightModal' : 'addToCart'; ?>(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars($product['name']); ?>', <?php echo $product['price']; ?>)"
+                                            class="w-full mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg animate-pulse-soft"
+                                            data-is-weighted="<?php echo $isWeighted ? 'true' : 'false'; ?>">
+                                        ➕ <?php echo $isWeighted ? 'Выбрать вес' : 'Добавить в корзину'; ?>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -298,7 +329,7 @@
 
     <!-- Auth Modal -->
     <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 scale-95 opacity-0 relative" id="modalContent">
             <div class="text-center mb-6">
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="text-3xl">🔐</span>
@@ -317,6 +348,74 @@
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                 <span class="text-2xl">&times;</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Weight Product Modal -->
+    <div id="weightModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 scale-95 opacity-0 relative" id="weightModalContent">
+            <button onclick="closeWeightModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                <span class="text-2xl">&times;</span>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">⚖️</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2" id="weightModalTitle">Укажите вес</h2>
+                <p class="text-gray-600 text-sm" id="weightModalSubtitle">Цена за 1 кг: <span id="weightPricePerKg" class="font-bold text-green-600">0</span> ₸</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Вес (в граммах)</label>
+                    <input type="number" id="weightInput" min="100" step="100" value="500" 
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-xl font-bold"
+                           oninput="calculateWeightPrice()">
+                    <div class="flex justify-between mt-2 text-xs text-gray-500">
+                        <span>Мин: 100г</span>
+                        <span>1 кг = 1000г</span>
+                    </div>
+                </div>
+                
+                <!-- Quick weight buttons -->
+                <div class="grid grid-cols-4 gap-2">
+                    <button type="button" onclick="setWeight(200)" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">200г</button>
+                    <button type="button" onclick="setWeight(500)" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">500г</button>
+                    <button type="button" onclick="setWeight(1000)" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">1 кг</button>
+                    <button type="button" onclick="setWeight(2000)" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">2 кг</button>
+                </div>
+                
+                <!-- Calculated price -->
+                <div class="bg-green-50 p-4 rounded-xl border-2 border-green-200">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700">Итого:</span>
+                        <span id="weightTotalPrice" class="text-2xl font-bold text-green-600">0 ₸</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center" id="weightDisplayText">500 г × цена за 1 кг</p>
+                </div>
+                
+                <button onclick="confirmWeightAdd()" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    ➕ Добавить в корзину
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-yellow-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">🔔</span> Уведомления
+            </h3>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 transition-colors">
+                    Прочитать все
+                </button>
+                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+        </div>
+        <div id="notificationsList" class="max-h-96 overflow-y-auto">
+            <!-- Notifications will be loaded here -->
         </div>
     </div>
 
@@ -664,6 +763,411 @@
                         }
                     });
                 });
+            }
+        });
+        
+        // =====================
+        // Weight Product Functions
+        // =====================
+        let currentWeightProduct = null;
+        let isUpdatingWeight = false;
+        
+        // Show weight modal for adding weighted product
+        function showWeightModal(productId, name, pricePerKg) {
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            if (!isLoggedIn) {
+                showAuthModal();
+                return;
+            }
+            
+            currentWeightProduct = { id: productId, name: name, price: pricePerKg };
+            isUpdatingWeight = false;
+            
+            document.getElementById('weightModalTitle').textContent = 'Укажите вес';
+            document.getElementById('weightPricePerKg').textContent = pricePerKg.toLocaleString();
+            document.getElementById('weightInput').value = 500;
+            document.getElementById('weightTotalPrice').textContent = Math.round(pricePerKg * 0.5).toLocaleString() + ' ₸';
+            document.getElementById('weightDisplayText').textContent = '500 г × ' + pricePerKg.toLocaleString() + ' ₸/кг';
+            
+            const modal = document.getElementById('weightModal');
+            const modalContent = document.getElementById('weightModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            calculateWeightPrice();
+        }
+        
+        // Show weight modal for updating existing weighted product
+        function showWeightModalForUpdate(productId, currentWeight) {
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            if (!isLoggedIn) {
+                showAuthModal();
+                return;
+            }
+            
+            // Get product info from card
+            const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+            if (!productCard) return;
+            
+            const productName = productCard.querySelector('h4')?.textContent || 'Товар';
+            const productPrice = productCard.querySelector('.text-2xl.font-bold.text-green-600')?.textContent.replace(' ₸', '').replace(/,/g, '') || '0';
+            
+            currentWeightProduct = { id: productId, name: productName, price: parseFloat(productPrice) };
+            isUpdatingWeight = true;
+            
+            document.getElementById('weightModalTitle').textContent = 'Изменить вес';
+            document.getElementById('weightPricePerKg').textContent = parseFloat(productPrice).toLocaleString();
+            document.getElementById('weightInput').value = currentWeight || 500;
+            
+            const modal = document.getElementById('weightModal');
+            const modalContent = document.getElementById('weightModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            calculateWeightPrice();
+        }
+        
+        // Close weight modal
+        function closeWeightModal() {
+            const modal = document.getElementById('weightModal');
+            const modalContent = document.getElementById('weightModalContent');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                currentWeightProduct = null;
+                isUpdatingWeight = false;
+            }, 300);
+        }
+        
+        // Set weight from quick buttons
+        function setWeight(grams) {
+            document.getElementById('weightInput').value = grams;
+            calculateWeightPrice();
+        }
+        
+        // Calculate price based on weight
+        function calculateWeightPrice() {
+            if (!currentWeightProduct) return;
+            
+            const weightInput = document.getElementById('weightInput');
+            let weight = parseInt(weightInput.value) || 100;
+            
+            // Enforce minimum weight
+            if (weight < 100) {
+                weight = 100;
+                weightInput.value = 100;
+            }
+            
+            const pricePerKg = currentWeightProduct.price;
+            const totalPrice = Math.round((weight / 1000) * pricePerKg);
+            
+            document.getElementById('weightTotalPrice').textContent = totalPrice.toLocaleString() + ' ₸';
+            
+            // Format weight display
+            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
+            document.getElementById('weightDisplayText').textContent = weightDisplay + ' × ' + pricePerKg.toLocaleString() + ' ₸/кг';
+        }
+        
+        // Confirm adding weighted product to cart
+        async function confirmWeightAdd() {
+            if (!currentWeightProduct) return;
+            
+            const weight = parseInt(document.getElementById('weightInput').value) || 500;
+            const pricePerKg = currentWeightProduct.price;
+            const totalPrice = Math.round((weight / 1000) * pricePerKg);
+            
+            try {
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        product_id: parseInt(currentWeightProduct.id), 
+                        quantity: 1,
+                        weight: weight,
+                        is_weighted: true,
+                        calculated_price: totalPrice
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    updateCartCount();
+                    closeWeightModal();
+                    showNotification(`✅ ${currentWeightProduct.name} (${weight >= 1000 ? (weight/1000) + ' кг' : weight + ' г'}) добавлен в корзину!`, 'success');
+                    
+                    // Update UI - show weight in cart
+                    updateWeightedProductCard(parseInt(currentWeightProduct.id), weight, totalPrice);
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Ошибка при добавлении в корзину', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка сети: ' + error.message, 'error');
+            }
+        }
+        
+        // Update weighted product card UI
+        function updateWeightedProductCard(productId, weight, totalPrice) {
+            const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+            if (!productCard) return;
+            
+            const buttonContainer = productCard.querySelector('.mt-6');
+            if (!buttonContainer) return;
+            
+            const productName = productCard.querySelector('h4')?.textContent || 'Товар';
+            const productPrice = productCard.querySelector('.text-2xl.font-bold.text-green-600')?.textContent.replace(' ₸', '').replace(/,/g, '') || '0';
+            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
+            
+            const newHTML = `
+                <div class="w-full flex items-center justify-center space-x-4 bg-green-50 p-3 rounded-xl border-2 border-green-200">
+                    <button onclick="showWeightModalForUpdate(${productId}, ${weight})"
+                            class="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 font-bold"
+                            title="Изменить вес">
+                        ✎
+                    </button>
+                    <span class="bg-white text-green-800 px-4 py-2 rounded-lg font-semibold min-w-[3rem] text-center border-2 border-green-200">
+                        ${weightDisplay}
+                    </span>
+                    <button onclick="removeWeightedFromCart(${productId})"
+                            class="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200 font-bold"
+                            title="Удалить">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            buttonContainer.innerHTML = newHTML;
+        }
+        
+        // Remove weighted product from cart
+        async function removeWeightedFromCart(productId) {
+            try {
+                const response = await fetch('/api/cart/' + productId, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    updateCartCount();
+                    showNotification('Товар удален из корзины', 'success');
+                    revertWeightedProductCard(parseInt(productId));
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Ошибка при удалении', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка сети: ' + error.message, 'error');
+            }
+        }
+        
+        // Revert weighted product card to "Select weight" button
+        function revertWeightedProductCard(productId) {
+            const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+            if (!productCard) return;
+            
+            const buttonContainer = productCard.querySelector('.mt-6');
+            if (!buttonContainer) return;
+            
+            const productName = productCard.querySelector('h4')?.textContent || 'Товар';
+            const productPrice = productCard.querySelector('.text-2xl.font-bold.text-green-600')?.textContent.replace(' ₸', '').replace(/,/g, '') || '0';
+            
+            const newHTML = `
+                <button onclick="showWeightModal(${productId}, '${productName.replace(/'/g, "\\'")}', ${productPrice})"
+                        class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg animate-pulse-soft"
+                        data-is-weighted="true">
+                    ➕ Выбрать вес
+                </button>
+            `;
+            
+            buttonContainer.innerHTML = newHTML;
+        }
+        
+        // Close modals when clicking outside
+        document.getElementById('authModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAuthModal();
+        });
+        document.getElementById('weightModal').addEventListener('click', function(e) {
+            if (e.target === this) closeWeightModal();
+        });
+        
+        // =====================
+        // Notifications Functions
+        // =====================
+        let notificationsOpen = false;
+        
+        // Toggle notifications modal
+        function toggleNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            if (notificationsOpen) {
+                closeNotifications();
+            } else {
+                openNotifications();
+            }
+        }
+        
+        // Open notifications modal
+        function openNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('scale-95', 'opacity-0');
+                modal.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            notificationsOpen = true;
+            loadNotifications();
+        }
+        
+        // Close notifications modal
+        function closeNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('scale-100', 'opacity-100');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            notificationsOpen = false;
+        }
+        
+        // Load notifications from API
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
+            
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const notifications = await response.json();
+                    renderNotifications(notifications);
+                } else {
+                    list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>';
+                }
+            } catch (error) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>';
+            }
+        }
+        
+        // Render notifications list
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationsList');
+            
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>';
+                return;
+            }
+            
+            list.innerHTML = notifications.map(n => {
+                const icon = getNotificationIcon(n.type);
+                const bgColor = n.read ? 'bg-gray-50' : 'bg-blue-50';
+                const timeAgo = formatTimeAgo(n.created_at);
+                
+                return `
+                    <div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
+                        <div class="flex items-start space-x-3">
+                            <div class="text-2xl">${icon}</div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
+                                <div class="text-gray-600 text-sm">${n.message}</div>
+                                <div class="text-gray-400 text-xs mt-1">${timeAgo}</div>
+                            </div>
+                            ${!n.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Get notification icon based on type
+        function getNotificationIcon(type) {
+            const icons = {
+                'order_created': '📦',
+                'order_status': '🚚',
+                'new_order': '🆕',
+                'delivery': '🛵',
+                'system': '⚙️',
+                'promo': '🎁'
+            };
+            return icons[type] || '🔔';
+        }
+        
+        // Format time ago
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+            return Math.floor(diff / 86400) + ' дн назад';
+        }
+        
+        // Handle notification click
+        async function handleNotificationClick(notificationId, orderId) {
+            // Mark as read
+            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+            
+            // Update badge
+            updateNotificationBadge();
+            
+            // Navigate if has order_id
+            if (orderId) {
+                window.location.href = '/orders';
+            }
+            
+            closeNotifications();
+        }
+        
+        // Mark all as read
+        async function markAllAsRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+        // Update notification badge
+        async function updateNotificationBadge() {
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            if (!isLoggedIn) return;
+            
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 9 ? '9+' : data.count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating notification badge:', error);
+            }
+        }
+        
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            const bell = document.querySelector('[onclick="toggleNotifications()"]');
+            if (notificationsOpen && !modal.contains(e.target) && !bell.contains(e.target)) {
+                closeNotifications();
+            }
+        });
+        
+        // Initialize notifications on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            if (isLoggedIn) {
+                updateNotificationBadge();
+                // Poll for new notifications every 30 seconds
+                setInterval(updateNotificationBadge, 30000);
             }
         });
     </script>

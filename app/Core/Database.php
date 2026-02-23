@@ -115,6 +115,24 @@ class Database
     }
     
     /**
+     * Добавить запись с сохранением ID (для перемещения между таблицами)
+     */
+    public function insertWithId(string $table, array $item): bool
+    {
+        $data = $this->read($table);
+        
+        // Проверяем, не существует ли запись с таким ID
+        foreach ($data as $existing) {
+            if (isset($existing['id']) && $existing['id'] == $item['id']) {
+                return false; // Запись с таким ID уже существует
+            }
+        }
+        
+        $data[] = $item;
+        return $this->write($table, $data);
+    }
+    
+    /**
      * Обновить запись
      */
     public function update(string $table, int $id, array $updates): bool

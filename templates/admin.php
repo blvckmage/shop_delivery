@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ панель - Delivery</title>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        accent: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -45,19 +58,6 @@
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        accent: '#f59e0b'
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-gradient-to-br from-purple-50 via-white to-pink-50 min-h-screen">
     <!-- Header -->
@@ -75,6 +75,13 @@
                     <?php if (($user['role'] ?? 'user') === 'courier'): ?>
                         <a href="/courier" class="text-orange-700 hover:text-orange-600 transition-colors duration-200 font-medium">🚚 Курьер</a>
                     <?php endif; ?>
+                    <!-- Admin Notifications Bell -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="text-gray-700 hover:text-purple-600 transition-colors duration-200 relative text-xl">
+                            🔔
+                            <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </button>
+                    </div>
                     <span class="text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Админ'); ?>!</span>
                     <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">Выход</button>
                 </div>
@@ -246,8 +253,6 @@
                                         <label class="text-sm font-medium text-gray-700">Статус:</label>
 <select id="status-<?php echo $order['id']; ?>" class="border border-gray-300 rounded-md px-3 py-1 text-sm">
 <option value="" <?php echo $order['status'] === '' ? 'selected' : ''; ?>>Заказ создан</option>
-                                            <option value="СБОРКА" <?php echo $order['status'] === 'СБОРКА' ? 'selected' : ''; ?>>Заказ собирается</option>
-                                            <option value="ОЖИДАНИЕ_КУРЬЕРА" <?php echo $order['status'] === 'ОЖИДАНИЕ_КУРЬЕРА' ? 'selected' : ''; ?>>Ожидание курьера</option>
                                             <option value="В_ПУТИ" <?php echo $order['status'] === 'В_ПУТИ' ? 'selected' : ''; ?>>Заказ в пути</option>
                                             <option value="ДОСТАВЛЕН" <?php echo $order['status'] === 'ДОСТАВЛЕН' ? 'selected' : ''; ?>>Заказ доставлен</option>
                                             <option value="ОТМЕНЕН" <?php echo $order['status'] === 'ОТМЕНЕН' ? 'selected' : ''; ?>>Заказ отменен</option>
@@ -315,8 +320,11 @@
                     <textarea id="productDescription" name="description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"></textarea>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Цена</label>
+                    <label class="block text-sm font-medium text-gray-700">
+                        Цена <span id="priceLabelHint" class="text-orange-600 font-normal">(за 1 кг для весовых товаров)</span>
+                    </label>
                     <input type="number" step="0.01" id="productPrice" name="price" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                    <p id="priceHint" class="text-xs text-gray-500 mt-1">Для весовых товаров укажите цену за 1 кг</p>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Категория</label>
@@ -329,13 +337,8 @@
                 <div class="mb-4">
                     <label class="flex items-center">
                         <input type="checkbox" id="productIsWeighted" name="is_weighted" value="1" class="rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Весовой товар</span>
+                        <span class="ml-2 text-sm font-medium text-gray-700">Весовой товар (цена за 1 кг)</span>
                     </label>
-                </div>
-                <div class="mb-4" id="weightUnitContainer" style="display: none;">
-                    <label class="block text-sm font-medium text-gray-700">Вес/количество за единицу (граммы)</label>
-                    <input type="number" id="productWeightUnit" name="weight_unit" min="1" placeholder="1000" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
-                    <p class="text-xs text-gray-500 mt-1">Например: 1000 = 1 кг, 200 = 200 г, 500 = 0.5 кг</p>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Изображение товара</label>
@@ -741,6 +744,23 @@
             </div>
         </div>
 
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-purple-50 to-pink-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">🔔</span> Уведомления админа
+            </h3>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="text-xs text-purple-600 hover:text-purple-800 transition-colors">
+                    Прочитать все
+                </button>
+                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+        </div>
+        <div id="notificationsList" class="max-h-96 overflow-y-auto">
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
@@ -977,8 +997,6 @@
             document.getElementById('productCategoryId').value = categoryId;
             document.getElementById('productDescription').value = description;
             document.getElementById('productIsWeighted').checked = isWeighted == 1;
-            document.getElementById('productWeightUnit').value = weightUnit;
-            toggleWeightUnitField();
             document.getElementById('productModalTitle').textContent = productId ? 'Изменить продукт' : 'Добавить продукт';
             document.getElementById('productModal').classList.remove('hidden');
         }
@@ -1347,11 +1365,8 @@
             }
 
             try {
-                // Сбрасываем курьера и возвращаем статус
-                const response = await fetch(`/api/admin/orders/${orderId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ courier_id: null })
+                const response = await fetch(`/api/orders/${orderId}/reject`, {
+                    method: 'POST'
                 });
 
                 if (response.ok) {
@@ -1592,7 +1607,7 @@
 
                 if (response.ok) {
                     alert('Заказ успешно возвращен из архива!');
-                    loadArchive();
+                    location.reload();
                 } else {
                     alert('Ошибка при восстановлении заказа');
                 }
@@ -2037,6 +2052,123 @@
             if (savedTab && savedTab !== 'categories') {
                 showTab(savedTab);
             }
+            // Load notifications
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
+        });
+        
+        // =====================
+        // Admin Notifications Functions
+        // =====================
+        let notificationsOpen = false;
+        
+        function toggleNotifications() {
+            if (notificationsOpen) { closeNotifications(); } else { openNotifications(); }
+        }
+        
+        function openNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
+            notificationsOpen = true;
+            loadNotifications();
+        }
+        
+        function closeNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('scale-100', 'opacity-100');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            notificationsOpen = false;
+        }
+        
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) { renderNotifications(await response.json()); }
+                else { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>'; }
+            } catch (error) { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>'; }
+        }
+        
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationsList');
+            if (notifications.length === 0) { list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>'; return; }
+            list.innerHTML = notifications.map(n => {
+                const icon = {'new_order':'📦','order_status':'🚚','courier_request':'🚴','system':'⚙️','promo':'🎁'}[n.type] || '🔔';
+                const bgColor = n.read ? 'bg-gray-50' : 'bg-purple-50';
+                return `<div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${icon}</div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
+                            <div class="text-gray-600 text-sm">${n.message}</div>
+                            <div class="text-gray-400 text-xs mt-1">${formatTimeAgo(n.created_at)}</div>
+                        </div>
+                        ${!n.read ? '<div class="w-2 h-2 bg-purple-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        
+        function formatTimeAgo(dateString) {
+            const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+            return Math.floor(diff / 86400) + ' дн назад';
+        }
+        
+        async function handleNotificationClick(notificationId, orderId) {
+            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+            updateNotificationBadge();
+            if (orderId) { showTab('orders'); }
+            closeNotifications();
+        }
+        
+        async function markAllAsRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+        async function updateNotificationBadge() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) { badge.textContent = data.count > 9 ? '9+' : data.count; badge.classList.remove('hidden'); }
+                    else { badge.classList.add('hidden'); }
+                }
+            } catch (error) { console.error('Error updating badge:', error); }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            const bell = document.querySelector('[onclick="toggleNotifications()"]');
+            if (notificationsOpen && modal && !modal.contains(e.target) && bell && !bell.contains(e.target)) { closeNotifications(); }
+        });
+        
+        // Close modals when clicking outside
+        document.getElementById('categoryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCategoryModal();
+        });
+        document.getElementById('productModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProductModal();
+        });
+        document.getElementById('orderDetailsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeOrderDetailsModal();
+        });
+        document.getElementById('archiveModal').addEventListener('click', function(e) {
+            if (e.target === this) closeArchiveModal();
+        });
+        document.getElementById('userModal').addEventListener('click', function(e) {
+            if (e.target === this) closeUserModal();
+        });
+        document.getElementById('createUserModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCreateUserModal();
         });
     </script>
 </body>

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🛒 Корзина - Delivery</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -21,7 +20,9 @@
                 }
             }
         }
-
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         // Custom animations
         const style = document.createElement('style');
         style.textContent = `
@@ -158,68 +159,121 @@
                 <div class="space-y-6">
                     <?php
                     $total = 0;
+                    $itemCount = 0;
                     foreach ($cart as $index => $item):
                         // Skip items without price
                         if (empty($item['price']) || empty($item['name'])) {
                             continue;
                         }
-                        $itemTotal = $item['price'] * $item['quantity'];
+                        
+                        $isWeighted = !empty($item['is_weighted']) && !empty($item['weight']);
+                        
+                        if ($isWeighted) {
+                            // Для весовых товаров цена уже рассчитана
+                            $itemTotal = floatval($item['price']);
+                            $itemCount += 1;
+                        } else {
+                            $itemTotal = floatval($item['price']) * intval($item['quantity']);
+                            $itemCount += intval($item['quantity']);
+                        }
                         $total += $itemTotal;
                     ?>
                         <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
                              style="animation-delay: <?php echo $index * 0.1; ?>s"
-                             data-cart-item-id="<?php echo $item['id']; ?>">
+                             data-cart-item-id="<?php echo $item['id']; ?>"
+                             data-is-weighted="<?php echo $isWeighted ? '1' : '0'; ?>"
+                             <?php if ($isWeighted): ?>
+                             data-weight="<?php echo $item['weight']; ?>"
+                             data-price-per-kg="<?php echo $item['price_per_kg'] ?? $item['price']; ?>"
+                             <?php endif; ?>>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-6">
                                     <!-- Product Image Placeholder -->
-                                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center">
-                                        <span class="text-2xl">
-                                            <?php echo mb_substr($item['name'] ?? '', 0, 1, 'UTF-8'); ?>
-                                        </span>
+                                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center overflow-hidden">
+                                        <?php if (!empty($item['image_url'])): ?>
+                                            <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="w-full h-full object-cover">
+                                        <?php else: ?>
+                                            <span class="text-2xl">
+                                                <?php echo mb_substr($item['name'] ?? '', 0, 1, 'UTF-8'); ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </div>
 
                                     <!-- Product Info -->
                                     <div>
                                         <h3 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($item['name'] ?? ''); ?></h3>
-                                        <p class="text-gray-600">
-                                            <span class="item-price"><?php echo htmlspecialchars($item['price'] ?? '0'); ?></span> ₸
-                                            <?php if (!empty($item['weight_unit'])): ?>
-                                                за <?php 
-                                                    $unit = $item['weight_unit'];
-                                                    // If it's a number (grams), convert properly
-                                                    if (is_numeric($unit)) {
-                                                        echo $unit >= 1000 ? ($unit / 1000) . 'кг' : $unit . 'г';
-                                                    } else {
-                                                        // It's already a formatted string like "1 л"
-                                                        echo htmlspecialchars($unit);
-                                                    }
-                                                ?>
-                                            <?php else: ?>
-                                                за шт.
-                                            <?php endif; ?>
-                                        </p>
+                                        <?php if ($isWeighted): ?>
+                                            <p class="text-gray-600">
+                                                <span class="text-orange-600 font-semibold">⚖️ Весовой товар</span>
+                                            </p>
+                                            <p class="text-sm text-gray-500">
+                                                Цена за 1 кг: <span class="font-semibold"><?php echo number_format(floatval($item['price_per_kg'] ?? $item['price']), 0, '', ' '); ?></span> ₸
+                                            </p>
+                                        <?php else: ?>
+                                            <p class="text-gray-600">
+                                                <span class="item-price"><?php echo htmlspecialchars($item['price'] ?? '0'); ?></span> ₸
+                                                <?php if (!empty($item['weight_unit'])): ?>
+                                                    за <?php 
+                                                        $unit = $item['weight_unit'];
+                                                        if (is_numeric($unit)) {
+                                                            echo $unit >= 1000 ? ($unit / 1000) . 'кг' : $unit . 'г';
+                                                        } else {
+                                                            echo htmlspecialchars($unit);
+                                                        }
+                                                    ?>
+                                                <?php else: ?>
+                                                    за шт.
+                                                <?php endif; ?>
+                                            </p>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 
                                 <div class="flex items-center space-x-8">
-                                    <!-- Quantity Controls -->
-                                    <div class="flex items-center space-x-2">
-                                        <button onclick="decreaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
-                                            <span class="text-lg font-bold">-</span>
-                                        </button>
-                                        <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold min-w-[3rem] text-center item-quantity">
-                                            <?php echo htmlspecialchars($item['quantity']); ?>
-                                        </span>
-                                        <button onclick="increaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
-                                            <span class="text-lg font-bold">+</span>
-                                        </button>
-                                    </div>
+                                    <?php if ($isWeighted): ?>
+                                        <!-- Weight Display for weighted products -->
+                                        <div class="flex items-center space-x-3">
+                                            <span class="bg-orange-100 text-orange-800 px-4 py-2 rounded-lg font-semibold min-w-[5rem] text-center item-weight">
+                                                <?php 
+                                                    $weight = intval($item['weight']);
+                                                    echo $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
+                                                ?>
+                                            </span>
+                                            <button onclick="editWeight(<?php echo $item['id']; ?>)" 
+                                                    class="w-8 h-8 bg-blue-200 hover:bg-blue-300 rounded-full flex items-center justify-center transition-colors duration-200"
+                                                    title="Изменить вес">
+                                                <span class="text-sm">✎</span>
+                                            </button>
+                                        </div>
+                                    <?php else: ?>
+                                        <!-- Quantity Controls for regular products -->
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="decreaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
+                                                <span class="text-lg font-bold">-</span>
+                                            </button>
+                                            <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold min-w-[3rem] text-center item-quantity">
+                                                <?php echo htmlspecialchars($item['quantity']); ?>
+                                            </span>
+                                            <button onclick="increaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
+                                                <span class="text-lg font-bold">+</span>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
 
                                     <!-- Item Total -->
                                     <div class="text-right">
                                         <div class="text-2xl font-bold text-green-600 item-total">
-                                            <?php echo htmlspecialchars($itemTotal); ?> ₸
+                                            <?php echo number_format($itemTotal, 0, '', ' '); ?> ₸
                                         </div>
+                                        <?php if ($isWeighted): ?>
+                                            <div class="text-xs text-gray-500 item-calculation">
+                                                <?php 
+                                                    $weight = intval($item['weight']);
+                                                    $weightDisplay = $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
+                                                    echo $weightDisplay . ' × ' . number_format(floatval($item['price_per_kg'] ?? $item['price']), 0, '', ' ') . ' ₸/кг';
+                                                ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
 
                                     <!-- Remove Button -->
@@ -523,6 +577,195 @@
                 notification.classList.add('translate-x-full');
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
+        }
+        
+        // =====================
+        // Weight Product Functions
+        // =====================
+        let currentEditProductId = null;
+        
+        // Edit weight - show modal
+        function editWeight(productId) {
+            const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
+            if (!cartItem) return;
+            
+            currentEditProductId = productId;
+            const currentWeight = parseInt(cartItem.dataset.weight) || 500;
+            const pricePerKg = parseFloat(cartItem.dataset.pricePerKg) || 0;
+            
+            // Create modal
+            const modalHtml = `
+                <div id="weightEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-3xl">⚖️</span>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Изменить вес</h2>
+                            <p class="text-gray-600 text-sm">Цена за 1 кг: <span class="font-bold text-green-600">${pricePerKg.toLocaleString()}</span> ₸</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Вес (в граммах)</label>
+                                <input type="number" id="editWeightInput" min="100" step="100" value="${currentWeight}" 
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-xl font-bold"
+                                       oninput="calculateEditPrice(${pricePerKg})">
+                                <div class="flex justify-between mt-2 text-xs text-gray-500">
+                                    <span>Мин: 100г</span>
+                                    <span>1 кг = 1000г</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick weight buttons -->
+                            <div class="grid grid-cols-4 gap-2">
+                                <button type="button" onclick="setEditWeight(200, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">200г</button>
+                                <button type="button" onclick="setEditWeight(500, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">500г</button>
+                                <button type="button" onclick="setEditWeight(1000, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">1 кг</button>
+                                <button type="button" onclick="setEditWeight(2000, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">2 кг</button>
+                            </div>
+                            
+                            <!-- Calculated price -->
+                            <div class="bg-orange-50 p-4 rounded-xl border-2 border-orange-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Итого:</span>
+                                    <span id="editWeightTotal" class="text-2xl font-bold text-green-600">${Math.round((currentWeight / 1000) * pricePerKg).toLocaleString()} ₸</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1 text-center" id="editWeightDisplay">${currentWeight >= 1000 ? (currentWeight / 1000) + ' кг' : currentWeight + ' г'} × ${pricePerKg.toLocaleString()} ₸/кг</p>
+                            </div>
+                            
+                            <div class="flex space-x-3">
+                                <button onclick="closeWeightEditModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-xl font-semibold transition-colors">
+                                    Отмена
+                                </button>
+                                <button onclick="confirmWeightEdit(${productId}, ${pricePerKg})" class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200">
+                                    Сохранить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Add click outside handler
+            document.getElementById('weightEditModal').addEventListener('click', function(e) {
+                if (e.target === this) closeWeightEditModal();
+            });
+        }
+        
+        function setEditWeight(weight, pricePerKg) {
+            document.getElementById('editWeightInput').value = weight;
+            calculateEditPrice(pricePerKg);
+        }
+        
+        function calculateEditPrice(pricePerKg) {
+            const weightInput = document.getElementById('editWeightInput');
+            let weight = parseInt(weightInput.value) || 100;
+            
+            if (weight < 100) {
+                weight = 100;
+                weightInput.value = 100;
+            }
+            
+            const totalPrice = Math.round((weight / 1000) * pricePerKg);
+            document.getElementById('editWeightTotal').textContent = totalPrice.toLocaleString() + ' ₸';
+            
+            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
+            document.getElementById('editWeightDisplay').textContent = weightDisplay + ' × ' + pricePerKg.toLocaleString() + ' ₸/кг';
+        }
+        
+        function closeWeightEditModal() {
+            const modal = document.getElementById('weightEditModal');
+            if (modal) modal.remove();
+            currentEditProductId = null;
+        }
+        
+        async function confirmWeightEdit(productId, pricePerKg) {
+            const weight = parseInt(document.getElementById('editWeightInput').value) || 500;
+            const totalPrice = Math.round((weight / 1000) * pricePerKg);
+            
+            try {
+                // Отправляем обновление веса на сервер
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: 1,
+                        weight: weight,
+                        is_weighted: true,
+                        calculated_price: totalPrice
+                    })
+                });
+                
+                if (response.ok) {
+                    // Обновляем отображение
+                    const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
+                    if (cartItem) {
+                        cartItem.dataset.weight = weight;
+                        
+                        const weightEl = cartItem.querySelector('.item-weight');
+                        if (weightEl) {
+                            weightEl.textContent = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
+                        }
+                        
+                        const totalEl = cartItem.querySelector('.item-total');
+                        if (totalEl) {
+                            totalEl.textContent = totalPrice.toLocaleString() + ' ₸';
+                        }
+                        
+                        const calcEl = cartItem.querySelector('.item-calculation');
+                        if (calcEl) {
+                            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
+                            calcEl.textContent = weightDisplay + ' × ' + pricePerKg.toLocaleString() + ' ₸/кг';
+                        }
+                    }
+                    
+                    // Обновляем общую сумму
+                    updateCartTotalWeighted();
+                    
+                    closeWeightEditModal();
+                    showNotification('Вес обновлен', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Ошибка при обновлении веса', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка сети: ' + error.message, 'error');
+            }
+        }
+        
+        // Update cart total for weighted items
+        function updateCartTotalWeighted() {
+            let total = 0;
+            let itemCount = 0;
+            const cartItems = document.querySelectorAll('[data-cart-item-id]');
+            
+            cartItems.forEach(item => {
+                const isWeighted = item.dataset.isWeighted === '1';
+                const totalEl = item.querySelector('.item-total');
+                
+                if (totalEl) {
+                    // Извлекаем число из строки "1 234 ₸"
+                    const totalText = totalEl.textContent.replace(/[^\d]/g, '');
+                    const itemTotal = parseInt(totalText) || 0;
+                    total += itemTotal;
+                    itemCount++;
+                }
+            });
+            
+            const totalEl = document.getElementById('cart-total');
+            const countEl = document.getElementById('cart-count-text');
+            
+            if (totalEl) {
+                totalEl.textContent = total.toLocaleString() + ' ₸';
+            }
+            if (countEl) {
+                const itemWord = itemCount === 1 ? 'товар' : (itemCount > 1 && itemCount < 5 ? 'товара' : 'товаров');
+                countEl.textContent = itemCount + ' ' + itemWord;
+            }
         }
     </script>
 </body>

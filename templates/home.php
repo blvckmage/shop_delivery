@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Delivery - Лучшие продукты для вас</title>
     <?php echo $csrfMeta; ?>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -24,7 +22,10 @@
                 }
             }
         }
-
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
         // Custom animations
         const style = document.createElement('style');
         style.textContent = `
@@ -79,6 +80,13 @@
                         <?php if (($user['role'] ?? 'user') === 'admin'): ?>
                             <a href="/admin" class="text-purple-700 hover:text-purple-600 transition-colors duration-200 font-medium">⚙️ Админ</a>
                         <?php endif; ?>
+                        <!-- Notifications Bell -->
+                        <div class="relative">
+                            <button onclick="toggleNotifications()" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 relative">
+                                🔔
+                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
                         <div class="flex items-center space-x-3">
                             <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
                             <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
@@ -189,6 +197,24 @@
             </div>
         </div>
     </main>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-yellow-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">🔔</span> Уведомления
+            </h3>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 transition-colors">
+                    Прочитать все
+                </button>
+                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+        </div>
+        <div id="notificationsList" class="max-h-96 overflow-y-auto">
+            <!-- Notifications will be loaded here -->
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
@@ -317,6 +343,130 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
             setInterval(updateCartCount, 5000);
+            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
+            if (isLoggedIn) {
+                updateNotificationBadge();
+                setInterval(updateNotificationBadge, 30000);
+            }
+        });
+        
+        // =====================
+        // Notifications Functions
+        // =====================
+        let notificationsOpen = false;
+        
+        function toggleNotifications() {
+            if (notificationsOpen) {
+                closeNotifications();
+            } else {
+                openNotifications();
+            }
+        }
+        
+        function openNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('scale-95', 'opacity-0');
+                modal.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            notificationsOpen = true;
+            loadNotifications();
+        }
+        
+        function closeNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('scale-100', 'opacity-100');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            notificationsOpen = false;
+        }
+        
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const notifications = await response.json();
+                    renderNotifications(notifications);
+                } else {
+                    list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>';
+                }
+            } catch (error) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>';
+            }
+        }
+        
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationsList');
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>';
+                return;
+            }
+            list.innerHTML = notifications.map(n => {
+                const icon = {'order_created':'📦','order_status':'🚚','new_order':'🆕','delivery':'🛵','system':'⚙️','promo':'🎁'}[n.type] || '🔔';
+                const bgColor = n.read ? 'bg-gray-50' : 'bg-blue-50';
+                const timeAgo = formatTimeAgo(n.created_at);
+                return `<div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${icon}</div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
+                            <div class="text-gray-600 text-sm">${n.message}</div>
+                            <div class="text-gray-400 text-xs mt-1">${timeAgo}</div>
+                        </div>
+                        ${!n.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+            return Math.floor(diff / 86400) + ' дн назад';
+        }
+        
+        async function handleNotificationClick(notificationId, orderId) {
+            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+            updateNotificationBadge();
+            if (orderId) window.location.href = '/orders';
+            closeNotifications();
+        }
+        
+        async function markAllAsRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+        async function updateNotificationBadge() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 9 ? '9+' : data.count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (error) { console.error('Error updating badge:', error); }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            const bell = document.querySelector('[onclick="toggleNotifications()"]');
+            if (notificationsOpen && modal && !modal.contains(e.target) && bell && !bell.contains(e.target)) {
+                closeNotifications();
+            }
         });
     </script>
 </body>

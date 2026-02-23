@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🚚 Курьер - Delivery</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -46,6 +47,13 @@
                     <a href="/courier" class="text-orange-600 font-semibold border-b-2 border-orange-600 pb-1">
                         🚚 Курьер
                     </a>
+                    <!-- Courier Notifications Bell -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="text-gray-700 hover:text-orange-600 transition-colors duration-200 relative text-xl">
+                            🔔
+                            <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </button>
+                    </div>
                     <div class="flex items-center space-x-3">
                         <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Курьер'); ?>!</span>
                         <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">Выход</button>
@@ -112,8 +120,42 @@
                     </div>
                 </div>
             </div>
+
+            <!-- History Section -->
+            <div class="mt-8">
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 md:mb-6">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-800">📜 История доставок</h2>
+                        <button onclick="loadHistory()" class="text-blue-500 hover:text-blue-600 text-sm">
+                            🔄 Обновить
+                        </button>
+                    </div>
+                    <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    <div id="noHistory" class="text-center py-8 text-gray-500 hidden">
+                        <p class="text-lg">📦 История доставок пуста</p>
+                        <p class="text-sm mt-2">Здесь будут отображаться доставленные заказы</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">🔔</span> Уведомления
+            </h3>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="text-xs text-orange-600 hover:text-orange-800 transition-colors">
+                    Прочитать все
+                </button>
+                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+        </div>
+        <div id="notificationsList" class="max-h-96 overflow-y-auto">
+        </div>
+    </div>
 
     <!-- Order Details Modal -->
     <div id="orderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
@@ -124,7 +166,7 @@
             </div>
             <div id="modalOrderInfo" class="mb-6"></div>
             <div class="flex flex-wrap gap-3">
-                <button id="modalShowMapBtn" onclick="showCurrentOrderOnMap()" class="bg-green-500 hover:bg-green-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors duration-200 text-sm md:text-base">👤 Показать на карте</button>
+                <button id="modalShowMapBtn" onclick="showCurrentOrderOnMap()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors duration-200 text-sm md:text-base">👤 Показать на карте</button>
                 <button id="modalOnTheWayBtn" onclick="updateOrderStatus('В_ПУТИ')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors duration-200 hidden text-sm md:text-base">🚴 В пути</button>
                 <button id="modalDeliveredBtn" onclick="updateOrderStatus('ДОСТАВЛЕН')" class="bg-green-500 hover:bg-green-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors duration-200 hidden text-sm md:text-base">✅ Доставлено</button>
                 <button id="modalCancelBtn" onclick="cancelOrder()" class="bg-red-500 hover:bg-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors duration-200 hidden text-sm md:text-base">❌ Отменить</button>
@@ -146,6 +188,7 @@
             initMap();
             loadOrders();
             loadCurrentOrders();
+            loadHistory();
             startLocationTracking();
             setInterval(loadOrders, 30000);
             setInterval(loadCurrentOrders, 30000);
@@ -338,21 +381,11 @@
                         </div>
                     `;
                     
-                    const onTheWayBtn = document.getElementById('modalOnTheWayBtn');
                     const deliveredBtn = document.getElementById('modalDeliveredBtn');
                     const cancelBtn = document.getElementById('modalCancelBtn');
                     
-                    onTheWayBtn.classList.add('hidden');
-                    deliveredBtn.classList.add('hidden');
-                    cancelBtn.classList.add('hidden');
-                    
-                    if (order.status === 'ОЖИДАНИЕ_КУРЬЕРА') {
-                        onTheWayBtn.classList.remove('hidden');
-                        cancelBtn.classList.remove('hidden');
-                    } else if (order.status === 'В_ПУТИ') {
-                        deliveredBtn.classList.remove('hidden');
-                        cancelBtn.classList.remove('hidden');
-                    }
+                    deliveredBtn.classList.remove('hidden');
+                    cancelBtn.classList.remove('hidden');
                     
                     document.getElementById('orderModal').classList.remove('hidden');
                 }
@@ -470,11 +503,224 @@
             }
         });
 
+        // Load history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/courier/history');
+                const history = await response.json();
+                displayHistory(history || []);
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+        
+        // Display history
+        function displayHistory(history) {
+            const container = document.getElementById('historyList');
+            const noHistory = document.getElementById('noHistory');
+            
+            if (history.length === 0) {
+                container.innerHTML = '';
+                noHistory.classList.remove('hidden');
+                return;
+            }
+            
+            noHistory.classList.add('hidden');
+            container.innerHTML = history.map(order => `
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800 text-sm">Заказ #${order.id}</h3>
+                        <span class="text-green-600 font-bold text-sm">${order.total_price} ₸</span>
+                    </div>
+                    <p class="text-gray-600 text-xs mb-2 line-clamp-2">${order.address}</p>
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>${order.items?.length || 0} товаров</span>
+                        <span class="text-green-600">✅ Доставлен</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        ${new Date(order.created_at).toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // Logout function
         function logout() {
             if (watchId) navigator.geolocation.clearWatch(watchId);
             fetch('/api/auth/logout', { method: 'POST' }).then(() => location.href = '/');
         }
+        
+        // Close modal when clicking outside
+        document.getElementById('orderModal').addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('flex')) {
+                closeOrderModal();
+            }
+        });
+        
+        // =====================
+        // Browser Push Notifications
+        // =====================
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        console.log('Push notifications enabled');
+                    }
+                });
+            }
+        }
+        
+        function showBrowserNotification(title, body, icon = '/favicon.ico') {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: icon,
+                    badge: icon,
+                    vibrate: [200, 100, 200]
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+                
+                setTimeout(() => notification.close(), 10000);
+            }
+        }
+        
+        // =====================
+        // Courier Notifications Functions
+        // =====================
+        let notificationsOpen = false;
+        let lastNotificationCount = 0;
+        
+        // Initialize notifications on load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Request notification permission
+            requestNotificationPermission();
+            
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
+            
+            // Check for new notifications and show push
+            setInterval(checkForNewNotifications, 15000);
+        });
+        
+        async function checkForNewNotifications() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.count > lastNotificationCount) {
+                        // Load and show new notifications
+                        const notifResponse = await fetch('/api/notifications');
+                        if (notifResponse.ok) {
+                            const notifications = await notifResponse.json();
+                            // Show browser notification for the newest one
+                            if (notifications.length > 0) {
+                                const latest = notifications[0];
+                                showBrowserNotification(latest.title, latest.message);
+                            }
+                        }
+                    }
+                    lastNotificationCount = data.count;
+                }
+            } catch (error) {
+                console.error('Error checking notifications:', error);
+            }
+        }
+        
+        function toggleNotifications() {
+            if (notificationsOpen) { closeNotifications(); } else { openNotifications(); }
+        }
+        
+        function openNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
+            notificationsOpen = true;
+            loadNotifications();
+        }
+        
+        function closeNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('scale-100', 'opacity-100');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            notificationsOpen = false;
+        }
+        
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) { renderNotifications(await response.json()); }
+                else { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>'; }
+            } catch (error) { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>'; }
+        }
+        
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationsList');
+            if (notifications.length === 0) { list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>'; return; }
+            list.innerHTML = notifications.map(n => {
+                const icon = {'order_assigned':'📦','order_status':'🚚','new_order':'📋','system':'⚙️'}[n.type] || '🔔';
+                const bgColor = n.read ? 'bg-gray-50' : 'bg-orange-50';
+                return `<div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${icon}</div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
+                            <div class="text-gray-600 text-sm">${n.message}</div>
+                            <div class="text-gray-400 text-xs mt-1">${formatTimeAgo(n.created_at)}</div>
+                        </div>
+                        ${!n.read ? '<div class="w-2 h-2 bg-orange-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        
+        function formatTimeAgo(dateString) {
+            const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+            return Math.floor(diff / 86400) + ' дн назад';
+        }
+        
+        async function handleNotificationClick(notificationId, orderId) {
+            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+            updateNotificationBadge();
+            if (orderId) { 
+                loadCurrentOrders();
+                setTimeout(() => openOrderModal(orderId), 500);
+            }
+            closeNotifications();
+        }
+        
+        async function markAllAsRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+        async function updateNotificationBadge() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) { badge.textContent = data.count > 9 ? '9+' : data.count; badge.classList.remove('hidden'); }
+                    else { badge.classList.add('hidden'); }
+                }
+            } catch (error) { console.error('Error updating badge:', error); }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            const bell = document.querySelector('[onclick="toggleNotifications()"]');
+            if (notificationsOpen && modal && !modal.contains(e.target) && bell && !bell.contains(e.target)) { closeNotifications(); }
+        });
     </script>
 </body>
 </html>

@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📦 Оформление заказа - Delivery</title>
     <?php echo $csrfMeta ?? ''; ?>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         tailwind.config = {
             theme: {
@@ -22,7 +17,13 @@
                 }
             }
         }
-
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeIn {
@@ -102,7 +103,14 @@
                         <?php
                         $total = 0;
                         foreach ($cart as $item):
-                            $itemTotal = $item['price'] * $item['quantity'];
+                            $isWeighted = !empty($item['is_weighted']) && !empty($item['weight']);
+                            if ($isWeighted) {
+                                $itemTotal = floatval($item['price']);
+                                $weight = intval($item['weight']);
+                                $pricePerKg = floatval($item['price_per_kg'] ?? $item['price']);
+                            } else {
+                                $itemTotal = floatval($item['price']) * intval($item['quantity']);
+                            }
                             $total += $itemTotal;
                         ?>
                             <div class="flex items-center space-x-3 md:space-x-4 p-3 md:p-4 bg-white/50 rounded-xl md:rounded-2xl">
@@ -111,10 +119,30 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <h3 class="font-semibold text-gray-800 text-sm md:text-base truncate"><?php echo htmlspecialchars($item['name']); ?></h3>
-                                    <p class="text-xs md:text-sm text-gray-600"><?php echo htmlspecialchars($item['price']); ?> ₸ × <?php echo htmlspecialchars($item['quantity']); ?></p>
+                                    <?php if ($isWeighted): ?>
+                                        <p class="text-xs text-orange-600 font-semibold">⚖️ Весовой товар</p>
+                                        <p class="text-xs md:text-sm text-gray-600">Цена за 1 кг: <?php echo number_format($pricePerKg, 0, '', ' '); ?> ₸</p>
+                                        <p class="text-sm font-semibold text-gray-700">
+                                            <?php 
+                                                echo $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г'; 
+                                            ?>
+                                        </p>
+                                    <?php else: ?>
+                                        <p class="text-xs md:text-sm text-gray-600"><?php echo htmlspecialchars($item['price']); ?> ₸ × <?php echo htmlspecialchars($item['quantity']); ?></p>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="text-lg md:text-xl font-bold text-green-600">
-                                    <?php echo htmlspecialchars($itemTotal); ?> ₸
+                                <div class="text-right">
+                                    <div class="text-lg md:text-xl font-bold text-green-600">
+                                        <?php echo number_format($itemTotal, 0, '', ' '); ?> ₸
+                                    </div>
+                                    <?php if ($isWeighted): ?>
+                                        <p class="text-xs text-gray-500">
+                                            <?php 
+                                                $weightDisplay = $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
+                                                echo $weightDisplay . ' × ' . number_format($pricePerKg, 0, '', ' ') . ' ₸/кг';
+                                            ?>
+                                        </p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -316,7 +344,69 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', initMap);
+        // Flag to prevent infinite reload loop
+        const SYNC_KEY = 'cart_synced_timestamp';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            syncCartFromLocalStorage();
+        });
+        
+        // Sync cart from localStorage to server session
+        async function syncCartFromLocalStorage() {
+            const serverCart = <?php echo json_encode($cart); ?>;
+            const localCartRaw = localStorage.getItem('cart');
+            
+            if (!localCartRaw) {
+                // No local cart, nothing to sync
+                return;
+            }
+            
+            try {
+                const localCart = JSON.parse(localCartRaw);
+                
+                if (!Array.isArray(localCart) || localCart.length === 0) {
+                    return;
+                }
+                
+                // Check if we just synced (prevent infinite loop)
+                const lastSync = localStorage.getItem(SYNC_KEY);
+                if (lastSync && (Date.now() - parseInt(lastSync)) < 3000) {
+                    return; // Synced less than 3 seconds ago
+                }
+                
+                // Compare carts - check if they have same items with same data
+                const needsSync = !serverCart || serverCart.length !== localCart.length || 
+                    localCart.some((localItem, i) => {
+                        const serverItem = serverCart.find(s => s.id == localItem.id);
+                        if (!serverItem) return true;
+                        // For weighted items, check weight
+                        if (localItem.is_weighted || localItem.weight) {
+                            return localItem.weight != serverItem.weight || 
+                                   localItem.calculated_price != serverItem.calculated_price;
+                        }
+                        return localItem.quantity != serverItem.quantity;
+                    });
+                
+                if (needsSync) {
+                    // Mark sync time before request
+                    localStorage.setItem(SYNC_KEY, Date.now().toString());
+                    
+                    const response = await fetch('/api/cart/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: localCartRaw
+                    });
+                    
+                    if (response.ok) {
+                        // Reload to show synced cart
+                        location.reload();
+                    }
+                }
+            } catch (e) {
+                console.error('Error syncing cart:', e);
+            }
+        }
     </script>
 </body>
 </html>

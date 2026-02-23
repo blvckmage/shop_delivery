@@ -1,1 +1,94 @@
-[]
+[
+    {
+        "id": 1,
+        "type": "order_created",
+        "title": "Заказ оформлен",
+        "message": "Ваш заказ #1 успешно оформлен и скоро будет готов к доставке!",
+        "created_at": "2026-02-23T16:16:01+00:00",
+        "read": false,
+        "data": {
+            "order_id": 1
+        },
+        "user_id": 1
+    },
+    {
+        "id": 2,
+        "type": "new_order",
+        "title": "Новый заказ",
+        "message": "Поступил новый заказ #1 на сумму 550 ₸",
+        "created_at": "2026-02-23T16:16:01+00:00",
+        "read": true,
+        "data": {
+            "order_id": 1
+        },
+        "for_role": "admin"
+    },
+    {
+        "id": 3,
+        "type": "courier_request",
+        "title": "Запрос на заказ",
+        "message": "Курьер Нурдаулет запросил заказ #1",
+        "created_at": "2026-02-23T17:14:47+00:00",
+        "read": true,
+        "read_by": [],
+        "for_admins": true,
+        "for_role": "admin",
+        "data": {
+            "order_id": 1,
+            "courier_id": 4
+        }
+    },
+    {
+        "id": 4,
+        "type": "order_assigned",
+        "title": "Заказ назначен",
+        "message": "Вам назначен заказ #1. Заберите его в магазине!",
+        "created_at": "2026-02-23T17:14:55+00:00",
+        "read": false,
+        "read_by": [],
+        "data": {
+            "order_id": 1
+        },
+        "user_id": 4
+    },
+    {
+        "id": 5,
+        "type": "order_status",
+        "title": "Заказ в пути",
+        "message": "Ваш заказ #1 передан курьеру и уже в пути!",
+        "created_at": "2026-02-23T17:14:55+00:00",
+        "read": false,
+        "read_by": [],
+        "data": {
+            "order_id": 1
+        },
+        "user_id": 1
+    },
+    {
+        "id": 6,
+        "type": "order_delivered",
+        "title": "Заказ доставлен!",
+        "message": "Ваш заказ #1 успешно доставлен! Спасибо за покупку!",
+        "created_at": "2026-02-23T17:26:52+00:00",
+        "read": false,
+        "read_by": [],
+        "data": {
+            "order_id": 1
+        },
+        "user_id": 1
+    },
+    {
+        "id": 7,
+        "type": "order_delivered",
+        "title": "Заказ доставлен",
+        "message": "Заказ #1 успешно доставлен курьером",
+        "created_at": "2026-02-23T17:26:52+00:00",
+        "read": false,
+        "read_by": [],
+        "for_admins": true,
+        "for_role": "admin",
+        "data": {
+            "order_id": 1
+        }
+    }
+]

@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📋 Мои заказы - Delivery</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -23,7 +20,11 @@
                 }
             }
         }
-
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
         // Custom animations
         const style = document.createElement('style');
         style.textContent = `
@@ -74,6 +75,13 @@
                     <?php if (($user['role'] ?? 'user') === 'admin'): ?>
                         <a href="/admin" class="text-purple-700 hover:text-purple-600 transition-colors duration-200 font-medium">⚙️ Админ</a>
                     <?php endif; ?>
+                    <!-- Notifications Bell -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 relative">
+                            🔔
+                            <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </button>
+                    </div>
                     <div class="flex items-center space-x-3">
                         <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
                         <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
@@ -125,6 +133,16 @@
                     <span class="mr-4">📋</span> Мои заказы
                 </h1>
                 <p class="text-gray-600 text-lg">История всех ваших заказов</p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex space-x-4 mb-6">
+                <button id="activeTabBtn" onclick="switchTab('active')" class="px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white shadow-lg">
+                    📦 Активные заказы
+                </button>
+                <button id="historyTabBtn" onclick="switchTab('history')" class="px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    📜 История заказов
+                </button>
             </div>
 
             <!-- Orders Container -->
@@ -184,6 +202,23 @@
         </div>
     </div>
 
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-yellow-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">🔔</span> Уведомления
+            </h3>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 transition-colors">
+                    Прочитать все
+                </button>
+                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+        </div>
+        <div id="notificationsList" class="max-h-96 overflow-y-auto">
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 mt-12">
         <div class="container mx-auto px-4 text-center">
@@ -193,6 +228,30 @@
 
     <script>
         let orders = [];
+        let historyOrders = [];
+        let currentTab = 'active';
+
+        // Switch between tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            const activeBtn = document.getElementById('activeTabBtn');
+            const historyBtn = document.getElementById('historyTabBtn');
+            
+            if (tab === 'active') {
+                activeBtn.className = 'px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white shadow-lg';
+                historyBtn.className = 'px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
+                displayOrders(orders);
+            } else {
+                activeBtn.className = 'px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
+                historyBtn.className = 'px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white shadow-lg';
+                // Load history if not loaded yet
+                if (historyOrders.length === 0) {
+                    loadHistory();
+                } else {
+                    displayHistory(historyOrders);
+                }
+            }
+        }
 
         // Update cart count
         function updateCartCount() {
@@ -228,17 +287,27 @@
         // Display orders
         function displayOrders(ordersList) {
             const container = document.getElementById('ordersContainer');
-            const loadingState = document.getElementById('loadingState');
 
-            loadingState.style.display = 'none';
+            // Clear container completely
+            container.innerHTML = '';
 
             if (ordersList.length === 0) {
-                showNoOrdersState();
+                // Show no orders state inside container
+                container.innerHTML = `
+                    <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-12 text-center shadow-lg">
+                        <div class="text-6xl mb-4">📦</div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">У вас пока нет заказов</h2>
+                        <p class="text-gray-600 mb-8 text-lg">Самое время сделать первый заказ!</p>
+                        <a href="/catalog" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+                            <span class="mr-2">🛍️</span> Перейти к покупкам
+                        </a>
+                    </div>
+                `;
                 return;
             }
 
             const ordersHtml = ordersList.map((order, index) => createOrderCard(order, index)).join('');
-            container.insertAdjacentHTML('beforeend', ordersHtml);
+            container.innerHTML = ordersHtml;
         }
 
         // Create order card
@@ -296,12 +365,6 @@
                                     class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl transition-colors duration-200">
                                 📋 Подробнее
                             </button>
-                            ${order.status === 'READY' || order.status === 'TAKEN_BY_COURIER' || order.status === 'В_ПУТИ' ? `
-                                <button onclick="showTracking(${order.id})"
-                                        class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl transition-colors duration-200">
-                                    📍 Отследить
-                                </button>
-                            ` : ''}
                         </div>
                         <div class="text-xs text-gray-500">
                             Создан ${new Date(order.created_at).toLocaleString('ru-RU')}
@@ -326,11 +389,165 @@ function getStatusText(status) {
 
         // Show no orders state
         function showNoOrdersState() {
-            const loadingState = document.getElementById('loadingState');
-            const noOrdersState = document.getElementById('noOrdersState');
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = `
+                <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-12 text-center shadow-lg">
+                    <div class="text-6xl mb-4">📦</div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">У вас пока нет заказов</h2>
+                    <p class="text-gray-600 mb-8 text-lg">Самое время сделать первый заказ!</p>
+                    <a href="/catalog" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <span class="mr-2">🛍️</span> Перейти к покупкам
+                    </a>
+                </div>
+            `;
+        }
+        
+        // Show no history state
+        function showNoHistoryState() {
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = `
+                <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-12 text-center shadow-lg">
+                    <div class="text-6xl mb-4">📜</div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">История заказов пуста</h2>
+                    <p class="text-gray-600 mb-8 text-lg">У вас пока нет доставленных заказов</p>
+                </div>
+            `;
+        }
 
-            loadingState.style.display = 'none';
-            noOrdersState.classList.remove('hidden');
+        // Load history orders
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/orders/history');
+                const historyData = await response.json();
+
+                if (Array.isArray(historyData) && historyData.length > 0) {
+                    historyOrders = historyData;
+                    displayHistory(historyOrders);
+                } else {
+                    showNoHistoryState();
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                showNoHistoryState();
+            }
+        }
+
+        // Display history orders
+        function displayHistory(historyList) {
+            const container = document.getElementById('ordersContainer');
+
+            // Clear container
+            container.innerHTML = '';
+
+            if (historyList.length === 0) {
+                showNoHistoryState();
+                return;
+            }
+
+            const historyHtml = historyList.map((order, index) => createHistoryCard(order, index)).join('');
+            container.innerHTML = historyHtml;
+        }
+
+        // Create history card
+        function createHistoryCard(order, index) {
+            const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
+            const itemsText = itemsCount === 1 ? '1 товар' : (itemsCount < 5 ? `${itemsCount} товара` : `${itemsCount} товаров`);
+
+            return `
+                <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 animate-slide-in"
+                     style="animation-delay: ${index * 0.1}s">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Заказ #${order.id}</h3>
+                            <p class="text-gray-600">${new Date(order.created_at).toLocaleDateString('ru-RU')}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-green-600">${order.total_price} ₸</div>
+                            <div class="text-sm text-gray-500">${itemsText}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            ✅ Доставлен
+                        </span>
+                        ${order.delivery_included ? '<span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">🚚 С доставкой</span>' : ''}
+                    </div>
+
+                    <div class="text-sm text-gray-600 mb-4">
+                        <strong>Адрес:</strong> ${order.address}
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div class="flex space-x-3">
+                            <button onclick="showHistoryOrderDetails(${order.id})"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl transition-colors duration-200">
+                                📋 Подробнее
+                            </button>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            Доставлен ${order.archived_at ? new Date(order.archived_at).toLocaleString('ru-RU') : new Date(order.created_at).toLocaleString('ru-RU')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show history order details
+        function showHistoryOrderDetails(orderId) {
+            const order = historyOrders.find(o => o.id == orderId);
+            if (!order) return;
+
+            const modal = document.getElementById('orderModal');
+            const details = document.getElementById('orderDetails');
+
+            const itemsHtml = order.items.map(item => `
+                <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center">
+                        <span class="text-lg">${item.name ? item.name.charAt(0) : '?'}</span>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800">${item.name || 'Товар'}</h4>
+                        <p class="text-gray-600">${item.price} ₸ × ${item.quantity}</p>
+                    </div>
+                    <div class="font-bold text-green-600">
+                        ${(item.price || 0) * (item.quantity || 1)} ₸
+                    </div>
+                </div>
+            `).join('');
+
+            details.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-2">Информация о заказе</h4>
+                            <p><strong>ID:</strong> #${order.id}</p>
+                            <p><strong>Дата:</strong> ${new Date(order.created_at).toLocaleString('ru-RU')}</p>
+                            <p><strong>Статус:</strong> ✅ Доставлен</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-2">Доставка</h4>
+                            <p><strong>Адрес:</strong> ${order.address}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">Товары</h4>
+                        <div class="space-y-3">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-semibold">Итого:</span>
+                            <span class="text-2xl font-bold text-green-600">${order.total_price} ₸</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
         }
 
         let orderModalMap = null;
@@ -678,6 +895,8 @@ function getStatusText(status) {
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
             loadOrders();
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
             
             // Mobile menu toggle
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -688,11 +907,113 @@ function getStatusText(status) {
                 });
             }
         });
+        
+        // =====================
+        // Notifications Functions
+        // =====================
+        let notificationsOpen = false;
+        
+        function toggleNotifications() {
+            if (notificationsOpen) { closeNotifications(); } else { openNotifications(); }
+        }
+        
+        function openNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('scale-95', 'opacity-0'); modal.classList.add('scale-100', 'opacity-100'); }, 10);
+            notificationsOpen = true;
+            loadNotifications();
+        }
+        
+        function closeNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            modal.classList.remove('scale-100', 'opacity-100');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            notificationsOpen = false;
+        }
+        
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) { renderNotifications(await response.json()); }
+                else { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>'; }
+            } catch (error) { list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>'; }
+        }
+        
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationsList');
+            if (notifications.length === 0) { list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>'; return; }
+            list.innerHTML = notifications.map(n => {
+                const icon = {'order_created':'📦','order_status':'🚚','new_order':'🆕','delivery':'🛵','system':'⚙️','promo':'🎁'}[n.type] || '🔔';
+                const bgColor = n.read ? 'bg-gray-50' : 'bg-blue-50';
+                return `<div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${icon}</div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
+                            <div class="text-gray-600 text-sm">${n.message}</div>
+                            <div class="text-gray-400 text-xs mt-1">${formatTimeAgo(n.created_at)}</div>
+                        </div>
+                        ${!n.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        
+        function formatTimeAgo(dateString) {
+            const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+            return Math.floor(diff / 86400) + ' дн назад';
+        }
+        
+        async function handleNotificationClick(notificationId, orderId) {
+            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+            updateNotificationBadge();
+            if (orderId) loadOrders();
+            closeNotifications();
+        }
+        
+        async function markAllAsRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+        async function updateNotificationBadge() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) { badge.textContent = data.count > 9 ? '9+' : data.count; badge.classList.remove('hidden'); }
+                    else { badge.classList.add('hidden'); }
+                }
+            } catch (error) { console.error('Error updating badge:', error); }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            const bell = document.querySelector('[onclick="toggleNotifications()"]');
+            if (notificationsOpen && modal && !modal.contains(e.target) && bell && !bell.contains(e.target)) { closeNotifications(); }
+        });
 
-        // Close modal when clicking outside
+        // Close modals when clicking outside
         document.getElementById('orderModal').addEventListener('click', function(e) {
-            if (e.target === this) {
+            // Close if clicked on the backdrop or the flex container
+            if (e.target === this || e.target.classList.contains('flex')) {
                 closeOrderModal();
+            }
+        });
+        
+        document.getElementById('trackingModal').addEventListener('click', function(e) {
+            // Close if clicked on the backdrop or the flex container
+            if (e.target === this || e.target.classList.contains('flex')) {
+                closeTrackingModal();
             }
         });
     </script>

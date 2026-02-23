@@ -90,6 +90,30 @@ class OrderController extends Controller
         // Очищаем корзину
         $this->clearCart();
         
+        // Создаем уведомление для пользователя
+        \App\Controllers\ApiController::createNotification(
+            $this->db,
+            'order_created',
+            'Заказ оформлен',
+            "Ваш заказ #{$orderId} успешно оформлен и скоро будет готов к доставке!",
+            $this->getUserId(),
+            null,
+            false,
+            ['order_id' => $orderId]
+        );
+        
+        // Создаем уведомление для админов
+        \App\Controllers\ApiController::createNotification(
+            $this->db,
+            'new_order',
+            'Новый заказ',
+            "Поступил новый заказ #{$orderId} на сумму " . $this->calculateOrderTotal($items) . ' ₸',
+            null,
+            'admin',
+            false,
+            ['order_id' => $orderId]
+        );
+        
         return $this->json([
             'success' => true,
             'order_id' => $orderId
@@ -109,6 +133,32 @@ class OrderController extends Controller
         $orders = $this->orderModel->getByUserId($this->getUserId());
         
         return $this->json(array_values($orders));
+    }
+    
+    /**
+     * API: Получить историю заказов пользователя (архив)
+     */
+    public function getMyHistory(Request $request): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $archive = $this->orderModel->getArchive();
+        $userId = $this->getUserId();
+        
+        // Фильтруем заказы текущего пользователя
+        $history = array_filter($archive, function($order) use ($userId) {
+            return isset($order['user_id']) && $order['user_id'] == $userId;
+        });
+        
+        // Сортируем по дате (новые первые)
+        usort($history, function($a, $b) {
+            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
+        });
+        
+        return $this->json(array_values($history));
     }
     
     /**
@@ -155,14 +205,49 @@ class OrderController extends Controller
             if (isset($productMap[$productId])) {
                 $product = $productMap[$productId];
                 $item['name'] = $product['name'];
-                $item['price'] = $product['price'];
                 $item['image_url'] = $product['image_url'] ?? '';
-                $item['is_weighted'] = $product['is_weighted'] ?? 0;
                 $item['weight_unit'] = $product['weight_unit'] ?? '';
                 $item['product_id'] = $product['id'];
+                
+                // Обработка весовых товаров
+                $isWeighted = !empty($item['is_weighted']) || !empty($product['is_weighted']);
+                $item['is_weighted'] = $isWeighted ? 1 : 0;
+                
+                if ($isWeighted && !empty($item['weight'])) {
+                    // Для весового товара используем рассчитанную цену
+                    $item['price'] = $item['calculated_price'] ?? $this->calculateWeightedPrice($product, intval($item['weight']));
+                    $item['price_per_kg'] = $product['price']; // Цена за кг для отображения
+                } else {
+                    $item['price'] = $product['price'];
+                }
             }
         }
         
         return $cart;
+    }
+    
+    /**
+     * Рассчитать цену весового товара
+     */
+    private function calculateWeightedPrice(array $product, int $weightGrams): float
+    {
+        $pricePerKg = floatval($product['price']);
+        return round(($weightGrams / 1000) * $pricePerKg);
+    }
+    
+    /**
+     * Рассчитать общую сумму заказа
+     */
+    private function calculateOrderTotal(array $items): float
+    {
+        $total = 0;
+        foreach ($items as $item) {
+            if (!empty($item['is_weighted']) && !empty($item['weight'])) {
+                $total += floatval($item['price'] ?? 0);
+            } else {
+                $total += floatval($item['price'] ?? 0) * intval($item['quantity'] ?? 1);
+            }
+        }
+        return $total;
     }
 }
