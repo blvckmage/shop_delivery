@@ -689,12 +689,6 @@
                                 ${categoriesOptions}
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Или вставьте URL изображения</label>
-                            <input type="url" id="editProductImageUrl" value="${product.image_url || ''}"
-                                   onchange="handleEditProductImageUrl(this.value)"
-                                   class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
-                        </div>
                         <div class="flex items-center">
                             <input type="checkbox" id="editProductWeighted" ${product.is_weighted ? 'checked' : ''} class="w-4 h-4 text-warm-500 rounded">
                             <label for="editProductWeighted" class="ml-2 text-sm text-gray-700">Весовой товар (цена за 1 кг)</label>
@@ -736,7 +730,6 @@
             const name = document.getElementById('editProductName').value;
             const price = parseFloat(document.getElementById('editProductPrice').value);
             const category_id = parseInt(document.getElementById('editProductCategory').value);
-            const imageUrl = document.getElementById('editProductImageUrl').value || '';
             const is_weighted = document.getElementById('editProductWeighted').checked ? 1 : 0;
             
             if (!name || !price || !category_id) {
@@ -745,7 +738,12 @@
             }
             
             try {
-                let image_url = imageUrl;
+                // Получаем текущий URL изображения из превью или оставляем пустым
+                let image_url = '';
+                const currentImg = document.getElementById('editProductImagePreview');
+                if (currentImg && currentImg.src) {
+                    image_url = currentImg.src;
+                }
                 
                 // Если выбран новый файл - загружаем его
                 if (selectedEditProductImageFile) {
@@ -1012,12 +1010,6 @@
                                 <option value="">Выберите категорию</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Или вставьте URL изображения</label>
-                            <input type="url" id="productImageUrl" placeholder="https://..."
-                                   onchange="handleProductImageUrl(this.value)"
-                                   class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
-                        </div>
                         <div class="flex items-center">
                             <input type="checkbox" id="productWeighted" class="w-4 h-4 text-warm-500 rounded">
                             <label for="productWeighted" class="ml-2 text-sm text-gray-700">Весовой товар (цена за 1 кг)</label>
@@ -1103,7 +1095,6 @@
             const name = document.getElementById('productName').value;
             const price = parseFloat(document.getElementById('productPrice').value);
             const category_id = parseInt(document.getElementById('productCategory').value);
-            const imageUrl = document.getElementById('productImageUrl').value || '';
             const is_weighted = document.getElementById('productWeighted').checked ? 1 : 0;
             
             if (!name || !price || !category_id) {
@@ -1111,8 +1102,13 @@
                 return;
             }
             
+            if (!selectedProductImageFile) {
+                showToast('Загрузите фото товара');
+                return;
+            }
+            
             try {
-                let image_url = imageUrl;
+                let image_url = '';
                 
                 // Если выбран файл - загружаем его
                 if (selectedProductImageFile) {

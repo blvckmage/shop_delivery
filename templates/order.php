@@ -110,7 +110,7 @@
                         <?php if ($isLoggedIn): ?>
                             <div class="flex items-center space-x-3">
                                 <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Админ</a>
+                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Панель администратора</a>
                                 <?php endif; ?>
                                 <?php if (($user['role'] ?? 'user') === 'courier'): ?>
                                     <a href="/courier" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Курьер</a>

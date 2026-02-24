@@ -1,4 +1,9 @@
 RewriteEngine On
+RewriteBase /
+
+# Разрешаем доступ к статическим файлам в uploads
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^uploads/(.*)$ - [L]
 
 # Если запрашивается существующий файл или папка - не перенаправляем
 RewriteCond %{REQUEST_FILENAME} !-f

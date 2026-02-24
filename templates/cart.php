@@ -105,7 +105,7 @@
                         <?php if ($isLoggedIn): ?>
                             <div class="flex items-center space-x-3">
                                 <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Админ</a>
+                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Панель администратора</a>
                                 <?php endif; ?>
                                 <a href="/profile" class="text-gray-600 hover:text-warm-600 font-medium transition-colors"><?php echo htmlspecialchars($user['name'] ?? 'Профиль'); ?></a>
                                 <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors">
