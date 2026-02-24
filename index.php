@@ -151,6 +151,7 @@ $router->get('/api/orders/{id}/courier-location', [App\Controllers\ApiController
 // Товары
 $router->get('/api/admin/products', [App\Controllers\AdminController::class, 'getProducts']);
 $router->post('/api/admin/products', [App\Controllers\AdminController::class, 'createProduct']);
+$router->post('/api/admin/products/upload-image', [App\Controllers\AdminController::class, 'uploadProductImage']);
 $router->put('/api/admin/products/{id}', [App\Controllers\AdminController::class, 'updateProduct']);
 $router->delete('/api/admin/products/{id}', [App\Controllers\AdminController::class, 'deleteProduct']);
 

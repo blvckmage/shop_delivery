@@ -58,7 +58,7 @@ class ApiController extends Controller
     }
     
     /**
-     * API: Взять заказ курьером (отправить запрос)
+     * API: Взять заказ курьером (автоматическое назначение)
      */
     public function courierTakeOrder(Request $request, int $id): Response
     {
@@ -69,18 +69,47 @@ class ApiController extends Controller
         
         // Проверка доступности заказа
         if (!$this->orderModel->isAvailableForCourier($id)) {
-            return $this->error('Заказ недоступен', 400);
+            return $this->error('Заказ недоступен или уже взят другим курьером', 400);
         }
         
-        // Сохраняем запрос курьера (не назначаем сразу)
-        $this->orderModel->update($id, ['courier_request_id' => $this->getUserId()]);
+        // Проверяем, есть ли у курьера уже активный заказ
+        $currentOrders = $this->orderModel->getByCourierId($this->getUserId());
+        $activeOrders = array_filter($currentOrders, function($o) {
+            return $o['status'] === OrderModel::STATUS_ON_THE_WAY;
+        });
         
-        // Уведомление для админов о запросе заказа курьером
+        if (count($activeOrders) > 0) {
+            return $this->error('У вас уже есть активный заказ. Сначала доставьте его.', 400);
+        }
+        
+        // Назначаем курьера и меняем статус на В_ПУТИ
+        $this->orderModel->update($id, [
+            'courier_id' => $this->getUserId(),
+            'courier_request_id' => null,
+            'status' => OrderModel::STATUS_ON_THE_WAY
+        ]);
+        
+        // Получаем заказ для уведомлений
+        $order = $this->orderModel->findById($id);
+        
+        // Уведомление для пользователя о назначении курьера
+        if ($order) {
+            self::notifyUser(
+                $this->db,
+                $order['user_id'],
+                'courier_assigned',
+                'Курьер назначен',
+                "Ваш заказ #{$id} принят курьером и скоро будет доставлен!",
+                ['order_id' => $id]
+            );
+        }
+        
+        // Уведомление для админов о взятии заказа
         self::notifyAdmins(
             $this->db,
-            'courier_request',
-            'Запрос на заказ',
-            "Курьер {$this->getUser()['name']} запросил заказ #{$id}",
+            'order_taken',
+            'Заказ взят курьером',
+            "Курьер {$this->getUser()['name']} взял заказ #{$id}",
             ['order_id' => $id, 'courier_id' => $this->getUserId()]
         );
         
@@ -171,8 +200,26 @@ class ApiController extends Controller
             return $this->error('Заказ не принадлежит вам', 403);
         }
         
-        // Сбрасываем курьера и статус
-        $this->orderModel->updateStatus($id, OrderModel::STATUS_WAITING_COURIER);
+        // Сбрасываем курьера - заказ снова доступен для других курьеров
+        $this->orderModel->update($id, [
+            'courier_id' => null,
+            'courier_request_id' => null
+        ]);
+        
+        // Получаем заказ для уведомления пользователя
+        $order = $this->orderModel->findById($id);
+        
+        // Уведомление для пользователя об отмене курьером
+        if ($order) {
+            self::notifyUser(
+                $this->db,
+                $order['user_id'],
+                'courier_cancelled',
+                'Курьер отменил доставку',
+                "Курьер отменил доставку заказа #{$id}. Ищем нового курьера.",
+                ['order_id' => $id]
+            );
+        }
         
         // Уведомление для админов об отмене заказа курьером
         self::notifyAdmins(
@@ -1177,5 +1224,58 @@ class ApiController extends Controller
         ?array $data = null
     ): void {
         self::createNotification($db, $type, $title, $message, $courierId, null, false, $data);
+    }
+    
+    // ==================== ГЕОКОДИНГ ====================
+    
+    /**
+     * API: Поиск координат по адресу (OpenStreetMap Nominatim)
+     */
+    public function geocodeSearch(Request $request): Response
+    {
+        $query = $request->query('q', '');
+        
+        if (empty($query)) {
+            return $this->json([]);
+        }
+        
+        // Используем OpenStreetMap Nominatim API
+        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+            'q' => $query,
+            'format' => 'json',
+            'limit' => 5,
+            'countrycodes' => 'kz', // Ограничиваем поиск Казахстаном
+        ]);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Delivery App/1.0');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode !== 200 || empty($response)) {
+            return $this->json([]);
+        }
+        
+        $data = json_decode($response, true);
+        
+        if (!is_array($data)) {
+            return $this->json([]);
+        }
+        
+        // Форматируем результаты
+        $results = array_map(function($item) {
+            return [
+                'lat' => $item['lat'] ?? null,
+                'lon' => $item['lon'] ?? null,
+                'display_name' => $item['display_name'] ?? '',
+            ];
+        }, $data);
+        
+        return $this->json($results);
     }
 }

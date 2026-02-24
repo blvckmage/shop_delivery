@@ -213,10 +213,13 @@ class OrderController extends Controller
                 $isWeighted = !empty($item['is_weighted']) || !empty($product['is_weighted']);
                 $item['is_weighted'] = $isWeighted ? 1 : 0;
                 
-                if ($isWeighted && !empty($item['weight'])) {
-                    // Для весового товара используем рассчитанную цену
-                    $item['price'] = $item['calculated_price'] ?? $this->calculateWeightedPrice($product, intval($item['weight']));
-                    $item['price_per_kg'] = $product['price']; // Цена за кг для отображения
+                if ($isWeighted) {
+                    // Для весового товара quantity = вес в кг
+                    // Цена = цена за кг * вес
+                    $weightKg = floatval($item['quantity'] ?? 0.5);
+                    $pricePerKg = floatval($product['price']);
+                    $item['price'] = $pricePerKg; // Цена за кг для отображения
+                    $item['calculated_price'] = round($weightKg * $pricePerKg);
                 } else {
                     $item['price'] = $product['price'];
                 }

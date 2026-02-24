@@ -40,25 +40,54 @@ class AdminController extends Controller
             return $error;
         }
         
-        $orders = $this->orderModel->getAll();
-        $products = $this->productModel->getAllWithCategories();
-        $categories = $this->categoryModel->getAll();
-        $users = $this->userModel->getAll();
-        
-        // Очищаем пароли
-        foreach ($users as &$user) {
-            unset($user['password']);
-        }
-        
-        return $this->render('admin', [
-            'orders' => $orders,
-            'products' => $products,
-            'categories' => $categories,
-            'users' => $users
-        ]);
+        return $this->render('admin');
     }
     
     // ==================== ТОВАРЫ ====================
+    
+    /**
+     * API: Загрузить изображение товара
+     */
+    public function uploadProductImage(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            return $this->error('Файл не загружен', 400);
+        }
+        
+        $file = $_FILES['image'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            return $this->error('Разрешены только изображения (JPEG, PNG, GIF, WebP)', 400);
+        }
+        
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return $this->error('Размер файла не должен превышать 5MB', 400);
+        }
+        
+        $uploadDir = __DIR__ . '/../../public/uploads/products/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
+        $filepath = $uploadDir . $filename;
+        
+        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+            return $this->error('Ошибка сохранения файла', 500);
+        }
+        
+        return $this->json([
+            'success' => true,
+            'url' => '/uploads/products/' . $filename
+        ]);
+    }
     
     /**
      * API: Получить все товары
@@ -70,8 +99,7 @@ class AdminController extends Controller
             return $error;
         }
         
-        $products = $this->productModel->getAll();
-        return $this->json($products);
+        return $this->json($this->productModel->getAll());
     }
     
     /**
@@ -86,7 +114,6 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Валидация
         $validator = Validator::make($data, [
             'name' => 'required,min:2',
             'price' => 'required,numeric,min_value:0',
@@ -97,12 +124,17 @@ class AdminController extends Controller
             return $this->error($validator->getFirstError(), 400);
         }
         
-        // Проверка категории
         if (!$this->categoryModel->exists(intval($data['category_id']))) {
             return $this->error('Категория не найдена', 404);
         }
         
-        $productId = $this->productModel->create($data);
+        $productId = $this->productModel->create([
+            'name' => Security::sanitize($data['name']),
+            'price' => floatval($data['price']),
+            'category_id' => intval($data['category_id']),
+            'image_url' => $data['image_url'] ?? '',
+            'is_weighted' => isset($data['is_weighted']) ? intval($data['is_weighted']) : 0
+        ]);
         
         return $this->json([
             'success' => true,
@@ -122,17 +154,21 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Проверка существования товара
         if ($this->productModel->findById($id) === null) {
             return $this->error('Товар не найден', 404);
         }
         
-        // Проверка категории если указана
         if (isset($data['category_id']) && !$this->categoryModel->exists(intval($data['category_id']))) {
             return $this->error('Категория не найдена', 404);
         }
         
-        $this->productModel->update($id, $data);
+        $this->productModel->update($id, [
+            'name' => Security::sanitize($data['name'] ?? ''),
+            'price' => floatval($data['price'] ?? 0),
+            'category_id' => intval($data['category_id'] ?? 0),
+            'image_url' => $data['image_url'] ?? '',
+            'is_weighted' => isset($data['is_weighted']) ? intval($data['is_weighted']) : 0
+        ]);
         
         return $this->json(['success' => true]);
     }
@@ -166,8 +202,7 @@ class AdminController extends Controller
             return $error;
         }
         
-        $categories = $this->categoryModel->getAll();
-        return $this->json($categories);
+        return $this->json($this->categoryModel->getAll());
     }
     
     /**
@@ -182,7 +217,6 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Валидация
         $validator = Validator::make($data, [
             'name' => 'required,min:2'
         ]);
@@ -247,8 +281,7 @@ class AdminController extends Controller
             return $error;
         }
         
-        $orders = $this->orderModel->getAll();
-        return $this->json($orders);
+        return $this->json($this->orderModel->getAll());
     }
     
     /**
@@ -263,7 +296,6 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Валидация статуса (пустая строка означает "Заказ создан" = STATUS_CREATED)
         $status = $data['status'] ?? '';
         if ($status === '') {
             $status = OrderModel::STATUS_CREATED;
@@ -273,7 +305,6 @@ class AdminController extends Controller
             return $this->error('Неверный статус: ' . $status, 400);
         }
         
-        // Получаем заказ до обновления
         $order = $this->orderModel->findById($id);
         $previousStatus = $order['status'] ?? '';
         
@@ -281,7 +312,7 @@ class AdminController extends Controller
             return $this->error('Заказ не найден', 404);
         }
         
-        // Уведомление курьеров о новом доступном заказе (статус изменился на В_ПУТИ)
+        // Уведомление курьеров о новом доступном заказе
         if ($status === OrderModel::STATUS_ON_THE_WAY && $previousStatus !== OrderModel::STATUS_ON_THE_WAY) {
             ApiController::notifyCouriers(
                 $this->db,
@@ -344,8 +375,7 @@ class AdminController extends Controller
             return $error;
         }
         
-        $archive = $this->orderModel->getArchive();
-        return $this->json($archive);
+        return $this->json($this->orderModel->getArchive());
     }
     
     // ==================== ПОЛЬЗОВАТЕЛИ ====================
@@ -362,12 +392,51 @@ class AdminController extends Controller
         
         $users = $this->userModel->getAll();
         
-        // Очищаем пароли
         foreach ($users as &$user) {
             unset($user['password']);
         }
         
         return $this->json($users);
+    }
+    
+    /**
+     * API: Создать пользователя
+     */
+    public function createUser(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $data = $request->json();
+        
+        $validator = Validator::make($data, [
+            'name' => 'required,min:2',
+            'phone' => 'required',
+            'password' => 'required,min:4'
+        ]);
+        
+        if (!$validator->validate()) {
+            return $this->error($validator->getFirstError(), 400);
+        }
+        
+        if ($this->userModel->findByPhone($data['phone']) !== null) {
+            return $this->error('Пользователь с таким телефоном уже существует', 409);
+        }
+        
+        $userId = $this->userModel->create([
+            'name' => Security::sanitize($data['name']),
+            'phone' => Security::sanitize($data['phone']),
+            'email' => Security::sanitize($data['email'] ?? ''),
+            'password' => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]),
+            'role' => $data['role'] ?? 'user'
+        ]);
+        
+        return $this->json([
+            'success' => true,
+            'user_id' => $userId
+        ]);
     }
     
     /**
@@ -382,17 +451,12 @@ class AdminController extends Controller
         
         $data = $request->json();
         
-        // Проверка существования пользователя
         if ($this->userModel->findById($id) === null) {
             return $this->error('Пользователь не найден', 404);
         }
         
-        // Валидация роли если указана
-        if (isset($data['role'])) {
-            $validRoles = ['user', 'admin', 'courier'];
-            if (!in_array($data['role'], $validRoles)) {
-                return $this->error('Неверная роль', 400);
-            }
+        if (isset($data['role']) && !in_array($data['role'], ['user', 'admin', 'courier'])) {
+            return $this->error('Неверная роль', 400);
         }
         
         $this->userModel->update($id, $data);
@@ -410,7 +474,6 @@ class AdminController extends Controller
             return $error;
         }
         
-        // Нельзя удалить себя
         if ($id === $this->getUserId()) {
             return $this->error('Нельзя удалить свой аккаунт', 400);
         }
@@ -420,50 +483,6 @@ class AdminController extends Controller
         }
         
         return $this->json(['success' => true]);
-    }
-    
-    /**
-     * API: Создать пользователя (админ)
-     */
-    public function createUser(Request $request): Response
-    {
-        $error = $this->requireAdmin();
-        if ($error !== null) {
-            return $error;
-        }
-        
-        $data = $request->json();
-        
-        // Валидация
-        $validator = Validator::make($data, [
-            'name' => 'required,min:2',
-            'phone' => 'required',
-            'password' => 'required,min:4'
-        ]);
-        
-        if (!$validator->validate()) {
-            return $this->error($validator->getFirstError(), 400);
-        }
-        
-        // Проверка на дубликат телефона
-        $existingUser = $this->userModel->findByPhone($data['phone']);
-        if ($existingUser !== null) {
-            return $this->error('Пользователь с таким телефоном уже существует', 409);
-        }
-        
-        // Создание пользователя
-        $userId = $this->userModel->create([
-            'name' => Security::sanitize($data['name']),
-            'phone' => Security::sanitize($data['phone']),
-            'email' => Security::sanitize($data['email'] ?? ''),
-            'password' => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]),
-            'role' => $data['role'] ?? 'user'
-        ]);
-        
-        return $this->json([
-            'success' => true,
-            'user_id' => $userId
-        ]);
     }
     
     // ==================== СТАТИСТИКА ====================
@@ -479,16 +498,49 @@ class AdminController extends Controller
         }
         
         $orderStats = $this->orderModel->getStats();
-        $users = $this->userModel->getAll();
-        $products = $this->productModel->getAll();
         
         return $this->json([
-            'total_users' => count($users),
-            'total_products' => count($products),
+            'total_users' => count($this->userModel->getAll()),
+            'total_products' => count($this->productModel->getAll()),
             'total_orders' => $orderStats['total'],
             'total_revenue' => $orderStats['total_revenue'],
             'orders_by_status' => $orderStats['by_status']
         ]);
+    }
+    
+    // ==================== КУРЬЕРЫ ====================
+    
+    /**
+     * API: Получить курьеров
+     */
+    public function getCouriers(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $users = $this->userModel->getAll();
+        $couriers = array_filter($users, fn($u) => ($u['role'] ?? '') === 'courier');
+        
+        foreach ($couriers as &$courier) {
+            unset($courier['password']);
+        }
+        
+        return $this->json(array_values($couriers));
+    }
+    
+    /**
+     * API: Получить запросы курьеров
+     */
+    public function getCourierRequests(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        return $this->json($this->db->read('courier_requests') ?? []);
     }
     
     // ==================== ЭКСПОРТ ====================
@@ -526,7 +578,6 @@ class AdminController extends Controller
         }
         
         $format = $request->get('format', 'excel');
-        
         $archive = $this->orderModel->getArchive();
         
         if ($format === 'pdf') {

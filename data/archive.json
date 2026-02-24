@@ -1,20 +1,5 @@
 [
     {
-        "id": 1,
-        "user_id": 3,
-        "courier_id": null,
-        "items": "[{\"id\":1,\"name\":\"\\u042f\\u0431\\u043b\\u043e\\u043a\\u0438\",\"price\":500,\"quantity\":3}]",
-        "address": "Тайманова 12",
-        "delivery_included": 0,
-        "delivery_price": 0,
-        "status": "Отменен",
-        "payment_status": "Ожидает",
-        "total_price": 1500,
-        "created_at": "2026-01-20T18:55:00+00:00",
-        "updated_at": "2026-02-02 16:50:57",
-        "archived_at": "2026-02-02 16:50:57"
-    },
-    {
         "id": 2,
         "user_id": 3,
         "courier_id": 4,
@@ -86,6 +71,35 @@
     },
     {
         "user_id": 1,
+        "items": "[{\"id\":1,\"quantity\":1,\"weight\":200,\"calculated_price\":100,\"is_weighted\":1,\"name\":\"Яблоки\",\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1560806887-1e4cd0b6cbd6?w=400\",\"weight_unit\":\"1000\",\"product_id\":1,\"price\":100,\"price_per_kg\":500},{\"id\":2,\"quantity\":1,\"name\":\"Молоко\",\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1550583724-b2692b85b150?w=400\",\"weight_unit\":\"1 л\",\"product_id\":2,\"is_weighted\":0,\"price\":450}]",
+        "address": "улица Толе Би 51",
+        "delivery_included": false,
+        "delivery_price": 0,
+        "total_price": 550,
+        "status": "В_ПУТИ",
+        "courier_id": 4,
+        "created_at": "2026-02-23T16:16:01+00:00",
+        "id": 9,
+        "courier_request_id": null,
+        "archived_at": "2026-02-24T04:48:49+00:00"
+    },
+    {
+        "id": 1,
+        "user_id": 3,
+        "courier_id": null,
+        "items": "[{\"id\":1,\"name\":\"\\u042f\\u0431\\u043b\\u043e\\u043a\\u0438\",\"price\":500,\"quantity\":3}]",
+        "address": "Тайманова 12",
+        "delivery_included": 0,
+        "delivery_price": 0,
+        "status": "В_ПУТИ",
+        "payment_status": "Ожидает",
+        "total_price": 1500,
+        "created_at": "2026-01-20T18:55:00+00:00",
+        "updated_at": "2026-02-02 16:50:57",
+        "archived_at": "2026-02-24T04:53:36+00:00"
+    },
+    {
+        "user_id": 1,
         "items": "[{\"id\":1,\"quantity\":2,\"name\":\"Яблоки\",\"price\":500,\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1560806887-1e4cd0b6cbd6?w=400\",\"is_weighted\":1,\"weight_unit\":\"1000\",\"product_id\":1}]",
         "address": "улица Рыскулова 52",
         "delivery_included": false,
@@ -95,19 +109,20 @@
         "courier_id": 4,
         "created_at": "2026-02-20T14:49:54+00:00",
         "id": 8,
-        "archived_at": "2026-02-23T14:54:01+00:00"
+        "archived_at": "2026-02-24T12:07:40+00:00"
     },
     {
+        "id": 10,
         "user_id": 1,
-        "items": "[{\"id\":1,\"quantity\":1,\"weight\":200,\"calculated_price\":100,\"is_weighted\":1,\"name\":\"Яблоки\",\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1560806887-1e4cd0b6cbd6?w=400\",\"weight_unit\":\"1000\",\"product_id\":1,\"price\":100,\"price_per_kg\":500},{\"id\":2,\"quantity\":1,\"name\":\"Молоко\",\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1550583724-b2692b85b150?w=400\",\"weight_unit\":\"1 л\",\"product_id\":2,\"is_weighted\":0,\"price\":450}]",
-        "address": "улица Толе Би 51",
+        "items": "[{\"id\":1,\"quantity\":2.5,\"is_weighted\":1,\"image_url\":\"https:\\\/\\\/images.unsplash.com\\\/photo-1560806887-1e4cd0b6cbd6?w=400\",\"name\":\"Яблоки\",\"price\":500,\"weight_unit\":\"1000\",\"product_id\":1,\"calculated_price\":1250}]",
+        "address": "Қонаев даңғылы 24",
         "delivery_included": false,
         "delivery_price": 0,
-        "total_price": 550,
+        "total_price": 1000,
         "status": "ДОСТАВЛЕН",
-        "courier_id": 4,
-        "created_at": "2026-02-23T16:16:01+00:00",
-        "id": 9,
-        "archived_at": "2026-02-23T16:34:00+00:00"
+        "courier_id": 2,
+        "created_at": "2026-02-24T13:30:17+00:00",
+        "courier_request_id": null,
+        "archived_at": "2026-02-24T14:37:00+00:00"
     }
 ]

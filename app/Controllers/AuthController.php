@@ -52,18 +52,15 @@ class AuthController extends Controller
     {
         $data = $request->json();
         
-        // Валидация
-        $validator = Validator::make($data, [
-            'email' => 'required',
-            'password' => 'required'
-        ]);
+        // Валидация - принимаем phone или email
+        $login = $data['phone'] ?? $data['email'] ?? null;
+        $password = $data['password'] ?? null;
         
-        if (!$validator->validate()) {
-            return $this->error($validator->getFirstError(), 400);
+        if (empty($login) || empty($password)) {
+            return $this->error('Введите телефон и пароль', 400);
         }
         
-        $login = Security::sanitize($data['email']);
-        $password = $data['password'];
+        $login = Security::sanitize($login);
         
         // Поиск пользователя по email или телефону
         $user = $this->userModel->findByLogin($login);

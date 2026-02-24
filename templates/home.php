@@ -2,449 +2,525 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delivery - Лучшие продукты для вас</title>
-    <?php echo $csrfMeta; ?>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Delivery - Доставка продуктов</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        accent: '#f59e0b'
+                        warm: {
+                            50: '#FFF9F5',
+                            100: '#FFF3EB',
+                            200: '#FFE4D1',
+                            300: '#FFC9A8',
+                            400: '#FFA573',
+                            500: '#FF7A3D',
+                            600: '#F05A1A',
+                            700: '#CC4412',
+                            800: '#A33510',
+                            900: '#7A2A0E',
+                        }
                     },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in',
-                        'slide-up': 'slideUp 0.6s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite'
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script>
-        // Custom animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes slideUp {
-                from { opacity: 0; transform: translateY(30px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes bounceGentle {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-5px); }
-            }
-            .animate-fade-in { animation: fadeIn 0.5s ease-in; }
-            .animate-slide-up { animation: slideUp 0.6s ease-out; }
-            .animate-bounce-gentle { animation: bounceGentle 2s infinite; }
-        `;
-        document.head.appendChild(style);
-    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .gradient-hero {
+            background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(240, 90, 26, 0.08);
+        }
+        
+        .card-shadow-hover:hover {
+            box-shadow: 0 8px 30px rgba(240, 90, 26, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FF7A3D 0%, #F05A1A 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(240, 90, 26, 0.3);
+        }
+        
+        .bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-white to-yellow-50 min-h-screen" data-is-logged-in="<?php echo $isLoggedIn ? 'true' : 'false'; ?>">
+<body class="gradient-hero min-h-screen pb-20 md:pb-0">
     <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <nav class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-xl flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">K</span>
+    <header class="glass sticky top-0 z-50 border-b border-warm-100">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                        </svg>
                     </div>
-                    <a href="/" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
-                        Delivery
-                    </a>
+                    <span class="text-lg font-bold text-gray-800">Delivery</span>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/catalog" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Каталог</a>
+                    <a href="/orders" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Заказы</a>
+                    <a href="/chat" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Чат</a>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="/catalog" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">
-                        🛍️ Каталог
-                    </a>
-                    <a href="/cart" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium relative">
-                        🛒 Корзина
-                        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                    </a>
-                    <?php if ($isLoggedIn): ?>
-                        <a href="/orders" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">📦 Заказы</a>
-                        <a href="/profile" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">👤 Профиль</a>
-                        <a href="/chat" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">💬 Чат</a>
-                        <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                            <a href="/courier" class="text-orange-700 hover:text-orange-600 transition-colors duration-200 font-medium">🚚 Курьер</a>
-                        <?php endif; ?>
-                        <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                            <a href="/admin" class="text-purple-700 hover:text-purple-600 transition-colors duration-200 font-medium">⚙️ Админ</a>
-                        <?php endif; ?>
-                        <!-- Notifications Bell -->
-                        <div class="relative">
-                            <button onclick="toggleNotifications()" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 relative">
-                                🔔
-                                <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                            </button>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
-                            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                                Выход
-                            </button>
-                        </div>
-                    <?php else: ?>
-                        <a href="/login" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                            Войти
-                        </a>
-                        <a href="/register" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                            Регистрация
-                        </a>
-                    <?php endif; ?>
-                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="relative p-2 rounded-full hover:bg-warm-50 transition-colors">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span id="notification-badge" class="hidden absolute top-1 right-1 w-2 h-2 bg-warm-500 rounded-full"></span>
+                        </button>
+                    </div>
 
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden text-gray-700 text-2xl">☰</button>
+                    <a href="/cart" class="relative p-2 rounded-full hover:bg-warm-50 transition-colors">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span id="cart-count" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-warm-500 text-white text-xs rounded-full flex items-center justify-center font-medium">0</span>
+                    </a>
+
+                    <div class="hidden md:block">
+                        <?php if ($isLoggedIn): ?>
+                            <div class="flex items-center space-x-3">
+                                <?php if (($user['role'] ?? 'user') === 'admin'): ?>
+                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Админ</a>
+                                <?php endif; ?>
+                                <?php if (($user['role'] ?? 'user') === 'courier'): ?>
+                                    <a href="/courier" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Курьер</a>
+                                <?php endif; ?>
+                                <a href="/profile" class="text-gray-600 hover:text-warm-600 font-medium transition-colors"><?php echo htmlspecialchars($user['name'] ?? 'Профиль'); ?></a>
+                                <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <a href="/login" class="btn-primary text-white px-5 py-2.5 rounded-full font-medium">Войти</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </nav>
-
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-sm border-t border-gray-200">
-                <div class="px-4 py-4 space-y-2">
-                    <a href="/catalog" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                        🛍️ Каталог
-                    </a>
-                    <a href="/cart" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                        🛒 Корзина
-                    </a>
-                    <?php if ($isLoggedIn): ?>
-                        <a href="/orders" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">📦 Заказы</a>
-                        <a href="/profile" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">👤 Профиль</a>
-                        <a href="/chat" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">💬 Чат</a>
-                        <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                            <a href="/courier" class="block px-4 py-3 text-orange-700 hover:bg-orange-50 rounded-lg transition-colors">🚚 Курьер</a>
-                        <?php endif; ?>
-                        <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                            <a href="/admin" class="block px-4 py-3 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors">⚙️ Админ</a>
-                        <?php endif; ?>
-                        <hr class="my-2">
-                        <div class="px-4 py-3">
-                            <p class="text-sm text-gray-600 mb-3">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</p>
-                            <button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                Выход
-                            </button>
-                        </div>
-                    <?php else: ?>
-                        <hr class="my-2">
-                        <a href="/login" class="block w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium">
-                            Войти
-                        </a>
-                        <a href="/register" class="block w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-lg transition-colors text-center font-medium">
-                            Регистрация
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <main class="w-full bg-gradient-to-r from-blue-50 via-white to-yellow-50">
-        <div class="w-full px-4 py-20">
-            <div class="text-center max-w-4xl mx-auto animate-fade-in">
-                <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-yellow-600 bg-clip-text text-transparent">
-                    Добро пожаловать в Delivery
+    <section class="gradient-hero pt-6 pb-8 px-4">
+        <div class="container mx-auto">
+            <div class="max-w-2xl mx-auto text-center">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                    Доставка продуктов
+                    <span class="text-warm-500">домой</span>
                 </h1>
-                <p class="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
-                    Откройте для себя мир свежих продуктов и качественных товаров.
-                    Мы предлагаем только лучшее для вашего дома и семьи!
+                <p class="text-gray-500 text-base md:text-lg mb-6">
+                    Свежие продукты с доставкой за 30-60 минут
                 </p>
-
-                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                    <a href="/catalog" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 animate-bounce-gentle">
-                        🛒 Начать покупки
-                    </a>
-                    <a href="#features" class="border-2 border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-300">
-                        Узнать больше
-                    </a>
-                </div>
+                
+                <form action="/catalog" method="GET" class="relative max-w-xl mx-auto">
+                    <input type="text" 
+                           name="search" 
+                           id="searchInput"
+                           placeholder="Найти продукты..." 
+                           class="w-full px-5 py-4 pr-12 rounded-2xl bg-white border border-warm-100 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none transition-all text-gray-700 placeholder-gray-400 card-shadow"
+                           autocomplete="off">
+                    <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-warm-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </button>
+                    <!-- Search suggestions -->
+                    <div id="searchSuggestions" class="hidden absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl card-shadow overflow-hidden z-50"></div>
+                </form>
             </div>
+        </div>
+    </section>
 
-            <!-- Features -->
-            <div id="features" class="grid md:grid-cols-3 gap-8 mt-20 animate-slide-up max-w-6xl mx-auto">
-                <div class="bg-white/70 backdrop-blur-sm p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div class="w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                        <span class="text-2xl">🌱</span>
+    <!-- Categories Section -->
+    <section class="px-4 py-6">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Категории</h2>
+                <a href="/catalog" class="text-warm-500 hover:text-warm-600 font-medium text-sm">Все</a>
+            </div>
+            
+            <div class="flex overflow-x-auto hide-scrollbar space-x-3 -mx-4 px-4 pb-2">
+                <?php foreach ($categories as $category): ?>
+                <a href="/catalog?category=<?php echo $category['id']; ?>" 
+                   class="flex-shrink-0 flex flex-col items-center p-4 bg-white rounded-2xl card-shadow card-shadow-hover transition-all min-w-[90px]">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-100 to-warm-200 flex items-center justify-center mb-2">
+                        <svg class="w-6 h-6 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                        </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Свежие продукты</h3>
-                    <p class="text-gray-600 leading-relaxed">Только свежие и качественные продукты от проверенных поставщиков</p>
+                    <span class="text-sm font-medium text-gray-700 text-center truncate w-full"><?php echo htmlspecialchars($category['name']); ?></span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Products Section -->
+    <section class="px-4 py-6">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Популярные товары</h2>
+                <a href="/catalog" class="text-warm-500 hover:text-warm-600 font-medium text-sm">Все</a>
+            </div>
+            
+            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="px-4 py-8">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-2xl p-5 card-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-warm-100 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Быстрая доставка</h3>
+                    <p class="text-sm text-gray-500">30-60 минут до двери</p>
                 </div>
-
-                <div class="bg-white/70 backdrop-blur-sm p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div class="w-16 h-16 bg-gradient-to-r from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                        <span class="text-2xl">🚚</span>
+                
+                <div class="bg-white rounded-2xl p-5 card-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-warm-100 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Быстрая доставка</h3>
-                    <p class="text-gray-600 leading-relaxed">Доставка в течение 1-2 часов по всему городу</p>
+                    <h3 class="font-semibold text-gray-900 mb-1">Свежие продукты</h3>
+                    <p class="text-sm text-gray-500">Только качественные товары</p>
                 </div>
-
-                <div class="bg-white/70 backdrop-blur-sm p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div class="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                        <span class="text-2xl">💎</span>
+                
+                <div class="bg-white rounded-2xl p-5 card-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-warm-100 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Качество гарантировано</h3>
-                    <p class="text-gray-600 leading-relaxed">Мы заботимся о качестве каждого продукта в нашем ассортименте</p>
+                    <h3 class="font-semibold text-gray-900 mb-1">Удобная оплата</h3>
+                    <p class="text-sm text-gray-500">Наличные или картой</p>
                 </div>
             </div>
         </div>
-    </main>
+    </section>
 
     <!-- Notifications Modal -->
-    <div id="notificationsModal" class="fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl z-50 hidden transform transition-all duration-300 scale-95 opacity-0 overflow-hidden">
-        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-yellow-50">
-            <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                <span class="mr-2">🔔</span> Уведомления
-            </h3>
-            <div class="flex items-center space-x-2">
-                <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 transition-colors">
-                    Прочитать все
+    <div id="notificationsModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/30" onclick="closeNotifications()"></div>
+        <div class="absolute top-0 right-0 bottom-0 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 translate-x-full" id="notificationsPanel">
+            <div class="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">Уведомления</h3>
+                <button onclick="closeNotifications()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
-                <button onclick="closeNotifications()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
             </div>
-        </div>
-        <div id="notificationsList" class="max-h-96 overflow-y-auto">
-            <!-- Notifications will be loaded here -->
+            <div id="notificationsList" class="overflow-y-auto h-full pb-20">
+                <div class="p-4 text-center text-gray-500">Загрузка...</div>
+            </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold">K</span>
-                        </div>
-                        <span class="text-xl font-bold">Delivery</span>
-                    </div>
-                    <p class="text-gray-400">Ваш надежный партнер в мире качественных продуктов</p>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Навигация</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/catalog" class="text-gray-400 hover:text-white transition-colors">Каталог</a></li>
-                        <li><a href="/cart" class="text-gray-400 hover:text-white transition-colors">Корзина</a></li>
-                        <li><a href="/orders" class="text-gray-400 hover:text-white transition-colors">Заказы</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Контакты</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li>📞 +7 (727) 123-45-67</li>
-                        <li>📧 info@kazyna.kz</li>
-                        <li>📍 Алматы, Казахстан</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Социальные сети</h4>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">📘</a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">📷</a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors text-2xl">🐦</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
-                <p>&copy; <?php echo date('Y'); ?> Delivery. Все права защищены.</p>
-            </div>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-40">
+        <div class="flex justify-around items-center h-16">
+            <a href="/" class="flex flex-col items-center justify-center text-warm-500">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span class="text-xs mt-1 font-medium">Главная</span>
+            </a>
+            <a href="/catalog" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                </svg>
+                <span class="text-xs mt-1">Каталог</span>
+            </a>
+            <a href="/orders" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="text-xs mt-1">Заказы</span>
+            </a>
+            <a href="/cart" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors relative">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-xs mt-1">Корзина</span>
+                <span id="cart-badge-mobile" class="hidden absolute top-0 right-4 w-4 h-4 bg-warm-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">0</span>
+            </a>
+            <?php if ($isLoggedIn): ?>
+            <a href="/profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="text-xs mt-1">Профиль</span>
+            </a>
+            <?php else: ?>
+            <a href="/login" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+                <span class="text-xs mt-1">Войти</span>
+            </a>
+            <?php endif; ?>
         </div>
-    </footer>
+    </nav>
 
     <script>
-        // CSRF token helper
-        function getCsrfToken() {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            return meta ? meta.getAttribute('content') : '';
-        }
-
-        // Fetch wrapper with CSRF
-        async function fetchWithCsrf(url, options = {}) {
-            const csrfToken = getCsrfToken();
-            const headers = {
-                'Content-Type': 'application/json',
-                ...options.headers
-            };
+        let searchTimeout;
+        
+        // Live search
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            const suggestions = document.getElementById('searchSuggestions');
             
-            if (csrfToken) {
-                headers['X-CSRF-TOKEN'] = csrfToken;
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                suggestions.classList.add('hidden');
+                return;
             }
             
-            return fetch(url, {
-                ...options,
-                headers
-            });
-        }
-
-        // Update cart count
-        async function updateCartCount() {
-            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
-            let count = 0;
-
-            if (isLoggedIn) {
+            searchTimeout = setTimeout(async () => {
                 try {
-                    const response = await fetch('/api/cart');
-                    if (response.ok) {
-                        const cart = await response.json();
-                        count = cart.reduce((sum, item) => sum + item.quantity, 0);
+                    const response = await fetch('/api/products?search=' + encodeURIComponent(query));
+                    const products = await response.json();
+                    
+                    if (products.length > 0) {
+                        suggestions.innerHTML = products.slice(0, 5).map(p => `
+                            <a href="/catalog?product=${p.id}" class="flex items-center p-3 hover:bg-warm-50 transition-colors border-b border-gray-50 last:border-0">
+                                <div class="w-10 h-10 rounded-lg bg-warm-50 flex-shrink-0 overflow-hidden">
+                                    ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : ''}
+                                </div>
+                                <div class="ml-3 flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">${p.name}</p>
+                                    <p class="text-xs text-warm-500">${p.price} ₸</p>
+                                </div>
+                            </a>
+                        `).join('');
+                        suggestions.classList.remove('hidden');
+                    } else {
+                        suggestions.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>';
+                        suggestions.classList.remove('hidden');
                     }
                 } catch (error) {
-                    const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-                    count = localCart.reduce((sum, item) => sum + item.quantity, 0);
+                    console.error('Search error:', error);
                 }
-            } else {
-                const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-                count = localCart.reduce((sum, item) => sum + item.quantity, 0);
+            }, 300);
+        });
+        
+        // Hide suggestions on click outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions')) {
+                document.getElementById('searchSuggestions').classList.add('hidden');
             }
+        });
 
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
             const cartCount = document.getElementById('cart-count');
-            if (cartCount) {
-                if (count > 0) {
-                    cartCount.textContent = count;
+            const cartBadgeMobile = document.getElementById('cart-badge-mobile');
+            
+            if (count > 0) {
+                if (cartCount) {
+                    cartCount.textContent = count > 9 ? '9+' : count;
                     cartCount.classList.remove('hidden');
-                } else {
-                    cartCount.classList.add('hidden');
                 }
-            }
-        }
-
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        });
-
-        // Logout function with CSRF
-        async function logout() {
-            try {
-                const response = await fetchWithCsrf('/api/auth/logout', { method: 'POST' });
-                if (response.ok) {
-                    window.location.href = '/';
+                if (cartBadgeMobile) {
+                    cartBadgeMobile.textContent = count > 9 ? '9+' : count;
+                    cartBadgeMobile.classList.remove('hidden');
                 }
-            } catch (error) {
-                console.error('Logout error:', error);
-            }
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateCartCount();
-            setInterval(updateCartCount, 5000);
-            const isLoggedIn = document.body.dataset.isLoggedIn === 'true';
-            if (isLoggedIn) {
-                updateNotificationBadge();
-                setInterval(updateNotificationBadge, 30000);
-            }
-        });
-        
-        // =====================
-        // Notifications Functions
-        // =====================
-        let notificationsOpen = false;
-        
-        function toggleNotifications() {
-            if (notificationsOpen) {
-                closeNotifications();
             } else {
-                openNotifications();
+                if (cartCount) cartCount.classList.add('hidden');
+                if (cartBadgeMobile) cartBadgeMobile.classList.add('hidden');
             }
         }
-        
-        function openNotifications() {
-            const modal = document.getElementById('notificationsModal');
-            modal.classList.remove('hidden');
+
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const products = await response.json();
+                displayProducts(products.slice(0, 8));
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('products-grid');
+            if (!products || products.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">Нет товаров</div>';
+                return;
+            }
+
+            container.innerHTML = products.map(product => `
+                <div class="bg-white rounded-2xl overflow-hidden card-shadow card-shadow-hover transition-all">
+                    <a href="/catalog?product=${product.id}" class="block">
+                        <div class="aspect-square bg-gradient-to-br from-warm-50 to-warm-100 relative overflow-hidden">
+                            ${product.image_url 
+                                ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">`
+                                : `<div class="w-full h-full flex items-center justify-center">
+                                    <svg class="w-12 h-12 text-warm-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                    </svg>
+                                   </div>`
+                            }
+                        </div>
+                    </a>
+                    <div class="p-3">
+                        <a href="/catalog?product=${product.id}" class="block">
+                            <h3 class="font-medium text-gray-900 text-sm truncate mb-1">${product.name}</h3>
+                            <p class="text-warm-600 font-bold">${product.price} <span class="text-sm font-normal text-gray-500">₸</span></p>
+                            ${product.is_weighted ? '<p class="text-xs text-gray-400">за 1 кг</p>' : ''}
+                        </a>
+                        <button onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, ${product.is_weighted || 0}, '${product.image_url || ''}')"
+                                class="w-full mt-3 py-2.5 bg-warm-50 hover:bg-warm-100 text-warm-600 font-medium rounded-xl transition-colors text-sm">
+                            В корзину
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id, name, price, isWeighted, imageUrl) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            const existingIndex = cart.findIndex(item => item.id === id);
+            if (existingIndex >= 0) {
+                cart[existingIndex].quantity += 1;
+            } else {
+                cart.push({
+                    id: id,
+                    name: name,
+                    price: price,
+                    quantity: 1,
+                    is_weighted: isWeighted,
+                    image_url: imageUrl
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            showToast('Добавлено в корзину');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg z-50 text-sm font-medium';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
             setTimeout(() => {
-                modal.classList.remove('scale-95', 'opacity-0');
-                modal.classList.add('scale-100', 'opacity-100');
-            }, 10);
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        let notificationsOpen = false;
+
+        function toggleNotifications() {
+            notificationsOpen ? closeNotifications() : openNotifications();
+        }
+
+        function openNotifications() {
+            document.getElementById('notificationsModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('notificationsPanel').classList.remove('translate-x-full'), 10);
             notificationsOpen = true;
             loadNotifications();
         }
-        
+
         function closeNotifications() {
-            const modal = document.getElementById('notificationsModal');
-            modal.classList.remove('scale-100', 'opacity-100');
-            modal.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            document.getElementById('notificationsPanel').classList.add('translate-x-full');
+            setTimeout(() => document.getElementById('notificationsModal').classList.add('hidden'), 300);
             notificationsOpen = false;
         }
-        
+
         async function loadNotifications() {
             const list = document.getElementById('notificationsList');
-            list.innerHTML = '<div class="p-4 text-center text-gray-500">Загрузка...</div>';
             try {
                 const response = await fetch('/api/notifications');
                 if (response.ok) {
                     const notifications = await response.json();
                     renderNotifications(notifications);
-                } else {
-                    list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>';
+                } else if (response.status === 401) {
+                    list.innerHTML = '<div class="p-8 text-center text-gray-500"><a href="/login" class="text-warm-500 hover:text-warm-600 font-medium">Войдите</a> чтобы видеть уведомления</div>';
                 }
             } catch (error) {
-                list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка сети</div>';
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">Ошибка загрузки</div>';
             }
         }
-        
+
         function renderNotifications(notifications) {
             const list = document.getElementById('notificationsList');
-            if (notifications.length === 0) {
-                list.innerHTML = '<div class="p-8 text-center text-gray-500"><div class="text-4xl mb-2">📭</div>Нет уведомлений</div>';
+            if (!notifications || notifications.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-gray-500">Нет уведомлений</div>';
                 return;
             }
-            list.innerHTML = notifications.map(n => {
-                const icon = {'order_created':'📦','order_status':'🚚','new_order':'🆕','delivery':'🛵','system':'⚙️','promo':'🎁'}[n.type] || '🔔';
-                const bgColor = n.read ? 'bg-gray-50' : 'bg-blue-50';
-                const timeAgo = formatTimeAgo(n.created_at);
-                return `<div class="p-4 border-b border-gray-100 ${bgColor} hover:bg-gray-100 transition-colors cursor-pointer" onclick="handleNotificationClick(${n.id}, ${n.data?.order_id ? n.data.order_id : 'null'})">
-                    <div class="flex items-start space-x-3">
-                        <div class="text-2xl">${icon}</div>
-                        <div class="flex-1">
-                            <div class="font-semibold text-gray-800 text-sm">${n.title}</div>
-                            <div class="text-gray-600 text-sm">${n.message}</div>
-                            <div class="text-gray-400 text-xs mt-1">${timeAgo}</div>
-                        </div>
-                        ${!n.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
-                    </div>
-                </div>`;
-            }).join('');
+
+            list.innerHTML = notifications.map(n => `
+                <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.read ? 'opacity-60' : ''}" onclick="handleNotification(${n.id})">
+                    <div class="font-medium text-gray-900 text-sm">${n.title}</div>
+                    <div class="text-gray-500 text-sm mt-1">${n.message}</div>
+                    <div class="text-gray-400 text-xs mt-2">${formatTimeAgo(n.created_at)}</div>
+                </div>
+            `).join('');
         }
-        
+
         function formatTimeAgo(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
+            const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
             if (diff < 60) return 'только что';
             if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
             if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
             return Math.floor(diff / 86400) + ' дн назад';
         }
-        
-        async function handleNotificationClick(notificationId, orderId) {
-            await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+
+        async function handleNotification(id) {
+            await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
             updateNotificationBadge();
-            if (orderId) window.location.href = '/orders';
             closeNotifications();
         }
-        
-        async function markAllAsRead() {
-            await fetch('/api/notifications/read-all', { method: 'POST' });
-            loadNotifications();
-            updateNotificationBadge();
-        }
-        
+
         async function updateNotificationBadge() {
             try {
                 const response = await fetch('/api/notifications/unread-count');
@@ -452,21 +528,28 @@
                     const data = await response.json();
                     const badge = document.getElementById('notification-badge');
                     if (data.count > 0) {
-                        badge.textContent = data.count > 9 ? '9+' : data.count;
                         badge.classList.remove('hidden');
                     } else {
                         badge.classList.add('hidden');
                     }
+                } else if (response.status === 401) {
+                    const badge = document.getElementById('notification-badge');
+                    if (badge) badge.classList.add('hidden');
                 }
-            } catch (error) { console.error('Error updating badge:', error); }
-        }
-        
-        document.addEventListener('click', function(e) {
-            const modal = document.getElementById('notificationsModal');
-            const bell = document.querySelector('[onclick="toggleNotifications()"]');
-            if (notificationsOpen && modal && !modal.contains(e.target) && bell && !bell.contains(e.target)) {
-                closeNotifications();
+            } catch (error) {
+                // Игнорируем ошибки
             }
+        }
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            loadProducts();
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
         });
     </script>
 </body>

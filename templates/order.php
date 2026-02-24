@@ -2,202 +2,238 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 Оформление заказа - Delivery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Оформление заказа - Delivery</title>
     <?php echo $csrfMeta ?? ''; ?>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        accent: '#f59e0b'
-                    }
-                }
-            }
-        }
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warm: {
+                            50: '#FFF9F5',
+                            100: '#FFF3EB',
+                            200: '#FFE4D1',
+                            300: '#FFC9A8',
+                            400: '#FFA573',
+                            500: '#FF7A3D',
+                            600: '#F05A1A',
+                            700: '#CC4412',
+                            800: '#A33510',
+                            900: '#7A2A0E',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
             }
-            .animate-fade-in { animation: fadeIn 0.5s ease-in; }
-        `;
-        document.head.appendChild(style);
+        }
     </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .gradient-hero {
+            background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(240, 90, 26, 0.08);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FF7A3D 0%, #F05A1A 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(240, 90, 26, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-white to-yellow-50 min-h-screen">
+<body class="gradient-hero min-h-screen pb-20 md:pb-0">
     <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <nav class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-xl flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">K</span>
+    <header class="glass sticky top-0 z-50 border-b border-warm-100">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                        </svg>
                     </div>
-                    <a href="/" class="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
-                        Delivery
-                    </a>
+                    <span class="text-lg font-bold text-gray-800">Delivery</span>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/catalog" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Каталог</a>
+                    <a href="/orders" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Заказы</a>
+                    <a href="/chat" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Чат</a>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="/catalog" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">🛍️ Каталог</a>
-                    <a href="/cart" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">🛒 Корзина</a>
-                    <a href="/orders" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">📦 Заказы</a>
-                    <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                        <a href="/courier" class="text-orange-700 hover:text-orange-600 transition-colors duration-200 font-medium">🚚 Курьер</a>
-                    <?php endif; ?>
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
-                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">Выход</button>
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:block">
+                        <?php if ($isLoggedIn): ?>
+                            <div class="flex items-center space-x-3">
+                                <?php if (($user['role'] ?? 'user') === 'admin'): ?>
+                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Админ</a>
+                                <?php endif; ?>
+                                <?php if (($user['role'] ?? 'user') === 'courier'): ?>
+                                    <a href="/courier" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Курьер</a>
+                                <?php endif; ?>
+                                <a href="/profile" class="text-gray-600 hover:text-warm-600 font-medium transition-colors"><?php echo htmlspecialchars($user['name'] ?? 'Профиль'); ?></a>
+                                <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <a href="/login" class="btn-primary text-white px-5 py-2.5 rounded-full font-medium">Войти</a>
+                        <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden text-gray-700 text-2xl p-2">☰</button>
             </nav>
-
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-sm border-t border-gray-200 mt-4 rounded-xl">
-                <div class="px-4 py-4 space-y-2">
-                    <a href="/catalog" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">🛍️ Каталог</a>
-                    <a href="/cart" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">🛒 Корзина</a>
-                    <a href="/orders" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">📦 Заказы</a>
-                    <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                        <a href="/courier" class="block px-4 py-3 text-orange-700 hover:bg-orange-50 rounded-lg transition-colors">🚚 Курьер</a>
-                    <?php endif; ?>
-                    <hr class="my-2">
-                    <div class="px-4 py-3">
-                        <p class="text-sm text-gray-600 mb-3">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</p>
-                        <button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">Выход</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-6 md:py-8 animate-fade-in">
-        <div class="max-w-4xl mx-auto">
-            <div class="mb-6 md:mb-8">
-                <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-4 flex items-center">
-                    <span class="mr-2 md:mr-4">📦</span> Оформление заказа
-                </h1>
-                <p class="text-sm md:text-base text-gray-600">Пожалуйста, проверьте ваш заказ и укажите адрес доставки</p>
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-4 md:gap-8">
+    <!-- Main Content -->
+    <main class="px-4 py-6">
+        <div class="container mx-auto max-w-4xl">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Оформление заказа</h1>
+            
+            <div class="grid lg:grid-cols-2 gap-4 md:gap-6">
                 <!-- Order Items -->
-                <div class="bg-white/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg">
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">🛒 Товары в заказе</h2>
+                <div class="bg-white rounded-2xl p-4 md:p-6 card-shadow">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Товары в заказе</h2>
 
-                    <div class="space-y-3 md:space-y-4">
+                    <div class="space-y-3">
                         <?php
                         $total = 0;
                         foreach ($cart as $item):
-                            $isWeighted = !empty($item['is_weighted']) && !empty($item['weight']);
+                            $isWeighted = !empty($item['is_weighted']);
+                            $quantity = floatval($item['quantity'] ?? 1);
+                            $pricePerKg = floatval($item['price']);
+                            
                             if ($isWeighted) {
-                                $itemTotal = floatval($item['price']);
-                                $weight = intval($item['weight']);
-                                $pricePerKg = floatval($item['price_per_kg'] ?? $item['price']);
+                                $itemTotal = round($pricePerKg * $quantity);
                             } else {
-                                $itemTotal = floatval($item['price']) * intval($item['quantity']);
+                                $itemTotal = $pricePerKg * intval($quantity);
                             }
                             $total += $itemTotal;
                         ?>
-                            <div class="flex items-center space-x-3 md:space-x-4 p-3 md:p-4 bg-white/50 rounded-xl md:rounded-2xl">
-                                <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <span class="text-lg md:text-xl"><?php echo mb_substr($item['name'], 0, 1, 'UTF-8'); ?></span>
+                            <div class="flex items-center gap-3 p-3 bg-warm-50 rounded-xl">
+                                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-warm-100 to-warm-200 flex-shrink-0 overflow-hidden">
+                                    <?php if (!empty($item['image_url'])): ?>
+                                        <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="w-full h-full object-cover">
+                                    <?php else: ?>
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                            </svg>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-gray-800 text-sm md:text-base truncate"><?php echo htmlspecialchars($item['name']); ?></h3>
+                                    <h3 class="font-medium text-gray-900 text-sm truncate"><?php echo htmlspecialchars($item['name']); ?></h3>
                                     <?php if ($isWeighted): ?>
-                                        <p class="text-xs text-orange-600 font-semibold">⚖️ Весовой товар</p>
-                                        <p class="text-xs md:text-sm text-gray-600">Цена за 1 кг: <?php echo number_format($pricePerKg, 0, '', ' '); ?> ₸</p>
-                                        <p class="text-sm font-semibold text-gray-700">
-                                            <?php 
-                                                echo $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г'; 
-                                            ?>
-                                        </p>
+                                        <p class="text-xs text-warm-600 font-medium"><?php echo $quantity; ?> кг × <?php echo number_format($pricePerKg, 0, '', ' '); ?> ₸/кг</p>
                                     <?php else: ?>
-                                        <p class="text-xs md:text-sm text-gray-600"><?php echo htmlspecialchars($item['price']); ?> ₸ × <?php echo htmlspecialchars($item['quantity']); ?></p>
+                                        <p class="text-xs text-gray-500"><?php echo intval($quantity); ?> шт × <?php echo number_format($pricePerKg, 0, '', ' '); ?> ₸</p>
                                     <?php endif; ?>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-lg md:text-xl font-bold text-green-600">
-                                        <?php echo number_format($itemTotal, 0, '', ' '); ?> ₸
-                                    </div>
-                                    <?php if ($isWeighted): ?>
-                                        <p class="text-xs text-gray-500">
-                                            <?php 
-                                                $weightDisplay = $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
-                                                echo $weightDisplay . ' × ' . number_format($pricePerKg, 0, '', ' ') . ' ₸/кг';
-                                            ?>
-                                        </p>
-                                    <?php endif; ?>
+                                    <p class="font-bold text-gray-900"><?php echo number_format($itemTotal, 0, '', ' '); ?> ₸</p>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
 
                     <!-- Order Summary -->
-                    <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-                        <div class="flex justify-between items-center text-base md:text-lg">
-                            <span class="font-semibold">Итого товаров:</span>
-                            <span class="font-bold text-blue-600"><?php echo htmlspecialchars($total); ?> ₸</span>
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Итого:</span>
+                            <span class="text-xl font-bold text-warm-600"><?php echo number_format($total, 0, '', ' '); ?> ₸</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Order Form -->
-                <div class="bg-white/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg">
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">🚚 Детали доставки</h2>
+                <div class="bg-white rounded-2xl p-4 md:p-6 card-shadow">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Детали доставки</h2>
 
-                    <form id="orderForm" class="space-y-4 md:space-y-6">
+                    <form id="orderForm" class="space-y-4">
                         <div>
-                            <label for="address" class="block text-sm font-semibold text-gray-700 mb-2">📍 Адрес доставки</label>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Адрес доставки</label>
                             <textarea id="address" name="address" required
-                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-base"
+                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all resize-none"
                                       rows="2"
                                       placeholder="Улица и номер дома..."></textarea>
-                            <div class="mt-3">
-                                <label for="apartment" class="block text-sm font-semibold text-gray-700 mb-2">🏠 Номер квартиры/офиса (необязательно)</label>
-                                <input type="text" id="apartment" name="apartment"
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base"
-                                       placeholder="Например: 42">
-                            </div>
-                            <div class="mt-4">
-                                <p class="text-xs md:text-sm text-gray-600 mb-2">Или выберите адрес на карте:</p>
-                                <div id="map" class="w-full h-48 md:h-64 rounded-xl border border-gray-200"></div>
-                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="apartment" class="block text-sm font-medium text-gray-700 mb-2">Номер квартиры/офиса <span class="text-gray-400">(необязательно)</span></label>
+                            <input type="text" id="apartment" name="apartment"
+                                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all"
+                                   placeholder="Например: 42">
+                        </div>
+                        
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Или выберите на карте:</p>
+                            <div id="map" class="w-full h-40 rounded-xl border border-gray-200"></div>
                         </div>
 
                         <!-- Order Total -->
-                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl md:rounded-2xl p-4 md:p-6">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-base md:text-lg font-semibold">Итого товаров:</span>
-                                <span class="text-base md:text-lg font-bold"><?php echo htmlspecialchars($total); ?> ₸</span>
+                        <div class="bg-warm-50 rounded-xl p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Товары:</span>
+                                <span class="font-medium"><?php echo number_format($total, 0, '', ' '); ?> ₸</span>
                             </div>
-                            <hr class="border-gray-300 mb-4">
                             <div class="flex justify-between items-center">
-                                <span class="text-xl md:text-2xl font-bold text-gray-800">К оплате:</span>
-                                <span class="text-2xl md:text-3xl font-bold text-green-600" id="total-price"><?php echo htmlspecialchars($total); ?> ₸</span>
+                                <span class="font-bold text-gray-900">К оплате:</span>
+                                <span class="text-2xl font-bold text-warm-600" id="total-price"><?php echo number_format($total, 0, '', ' '); ?> ₸</span>
                             </div>
                         </div>
 
                         <button type="submit" id="orderBtn"
-                                class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 md:py-4 px-4 rounded-xl md:rounded-2xl font-bold text-base md:text-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg">
+                                class="w-full btn-primary text-white py-4 rounded-xl font-semibold text-lg">
                             <span class="flex items-center justify-center">
-                                <span id="btnText">✅ Подтвердить заказ</span>
-                                <span id="btnSpinner" class="hidden ml-2 w-5 md:w-6 h-5 md:h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                <span id="btnText">Подтвердить заказ</span>
+                                <span id="btnSpinner" class="hidden ml-2 w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                             </span>
                         </button>
                     </form>
@@ -206,27 +242,52 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-6 md:py-8 mt-8 md:mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-sm md:text-base">&copy; <?php echo date('Y'); ?> Delivery. Все права защищены.</p>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-40">
+        <div class="flex justify-around items-center h-16">
+            <a href="/" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="text-xs mt-1">Главная</span>
+            </a>
+            <a href="/catalog" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                </svg>
+                <span class="text-xs mt-1">Каталог</span>
+            </a>
+            <a href="/orders" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="text-xs mt-1">Заказы</span>
+            </a>
+            <a href="/cart" class="flex flex-col items-center justify-center text-warm-500">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-xs mt-1 font-medium">Корзина</span>
+            </a>
+            <?php if ($isLoggedIn): ?>
+            <a href="/profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="text-xs mt-1">Профиль</span>
+            </a>
+            <?php else: ?>
+            <a href="/login" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+                <span class="text-xs mt-1">Войти</span>
+            </a>
+            <?php endif; ?>
         </div>
-    </footer>
+    </nav>
 
     <script>
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
-            document.getElementById('mobile-menu').classList.toggle('hidden');
-        });
-
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('mobile-menu');
-            const btn = document.getElementById('mobile-menu-btn');
-            if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                menu.classList.add('hidden');
-            }
-        });
-
         // CSRF helper
         function getCsrfToken() {
             const meta = document.querySelector('meta[name="csrf-token"]');
@@ -239,17 +300,21 @@
                 .then(() => location.reload());
         }
 
-        // Notification system
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 left-4 right-4 md:left-auto md:right-4 px-4 md:px-6 py-3 rounded-xl shadow-lg z-50 transform transition-transform duration-300 ${
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-20 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl shadow-lg z-50 text-sm font-medium ${
                 type === 'success' ? 'bg-green-500 text-white' :
-                type === 'error' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+                type === 'error' ? 'bg-red-500 text-white' : 'bg-gray-900 text-white'
             }`;
-            notification.innerHTML = `<span class="font-medium text-sm md:text-base">${message}</span>`;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.classList.add('opacity-0'), 4000);
-            setTimeout(() => notification.remove(), 4300);
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // Order form handler
@@ -289,26 +354,25 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification(`🎉 Заказ #${result.order_id} успешно оформлен!`, 'success');
+                    showToast('Заказ #' + result.order_id + ' успешно оформлен!', 'success');
                     localStorage.removeItem('cart');
                     setTimeout(() => window.location.href = '/orders', 2000);
                 } else {
-                    showNotification('❌ ' + (result.error || 'Ошибка оформления заказа'), 'error');
+                    showToast(result.error || 'Ошибка оформления заказа', 'error');
                 }
             } catch (error) {
-                showNotification('❌ Ошибка сети', 'error');
+                showToast('Ошибка сети', 'error');
             } finally {
                 btn.disabled = false;
-                btnText.textContent = '✅ Подтвердить заказ';
+                btnText.textContent = 'Подтвердить заказ';
                 btnSpinner.classList.add('hidden');
             }
         });
 
-        // Map functionality - Kentau store coordinates
+        // Map functionality
         let map, marker;
 
         function initMap() {
-            // Координаты магазина в Кентау
             const storeLat = 43.518703;
             const storeLng = 68.505423;
             
@@ -328,23 +392,53 @@
         async function reverseGeocode(lat, lng) {
             try {
                 const response = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lng}`);
+                
+                if (!response.ok) {
+                    console.error('Geocode response not ok:', response.status);
+                    return;
+                }
+                
                 const data = await response.json();
+                console.log('Geocode response:', data);
+                
                 if (data && data.address) {
                     const addr = data.address;
-                    let street = addr.road || addr.pedestrian || addr.path || addr.residential || '';
+                    // Пробуем разные поля для улицы
+                    let street = addr.road || addr.pedestrian || addr.path || addr.residential || 
+                                 addr.street || addr.neighbourhood || addr.suburb || '';
                     let house = addr.house_number || '';
-                    const address = [street, house].filter(Boolean).join(' ');
-                    if (address) {
-                        document.getElementById('address').value = address;
-                        showNotification('📍 Адрес выбран на карте', 'success');
+                    
+                    // Формируем адрес
+                    let address = '';
+                    if (street && house) {
+                        address = street + ' ' + house;
+                    } else if (street) {
+                        address = street;
+                    } else if (data.display_name) {
+                        // Если нет улицы, берем начало display_name
+                        const parts = data.display_name.split(',');
+                        address = parts[0] || '';
                     }
+                    
+                    if (address) {
+                        document.getElementById('address').value = address.trim();
+                        showToast('Адрес выбран', 'success');
+                    } else {
+                        showToast('Не удалось определить адрес', 'error');
+                    }
+                } else if (data && data.display_name) {
+                    // Fallback на display_name
+                    const parts = data.display_name.split(',');
+                    document.getElementById('address').value = parts[0] || data.display_name;
+                    showToast('Адрес выбран', 'success');
                 }
             } catch (error) {
-                showNotification('❌ Ошибка при определении адреса', 'error');
+                console.error('Geocode error:', error);
+                showToast('Ошибка при определении адреса', 'error');
             }
         }
 
-        // Flag to prevent infinite reload loop
+        // Sync cart
         const SYNC_KEY = 'cart_synced_timestamp';
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -352,44 +446,28 @@
             syncCartFromLocalStorage();
         });
         
-        // Sync cart from localStorage to server session
         async function syncCartFromLocalStorage() {
             const serverCart = <?php echo json_encode($cart); ?>;
             const localCartRaw = localStorage.getItem('cart');
             
-            if (!localCartRaw) {
-                // No local cart, nothing to sync
-                return;
-            }
+            if (!localCartRaw) return;
             
             try {
                 const localCart = JSON.parse(localCartRaw);
                 
-                if (!Array.isArray(localCart) || localCart.length === 0) {
-                    return;
-                }
+                if (!Array.isArray(localCart) || localCart.length === 0) return;
                 
-                // Check if we just synced (prevent infinite loop)
                 const lastSync = localStorage.getItem(SYNC_KEY);
-                if (lastSync && (Date.now() - parseInt(lastSync)) < 3000) {
-                    return; // Synced less than 3 seconds ago
-                }
+                if (lastSync && (Date.now() - parseInt(lastSync)) < 3000) return;
                 
-                // Compare carts - check if they have same items with same data
                 const needsSync = !serverCart || serverCart.length !== localCart.length || 
-                    localCart.some((localItem, i) => {
+                    localCart.some((localItem) => {
                         const serverItem = serverCart.find(s => s.id == localItem.id);
                         if (!serverItem) return true;
-                        // For weighted items, check weight
-                        if (localItem.is_weighted || localItem.weight) {
-                            return localItem.weight != serverItem.weight || 
-                                   localItem.calculated_price != serverItem.calculated_price;
-                        }
                         return localItem.quantity != serverItem.quantity;
                     });
                 
                 if (needsSync) {
-                    // Mark sync time before request
                     localStorage.setItem(SYNC_KEY, Date.now().toString());
                     
                     const response = await fetch('/api/cart/sync', {
@@ -399,7 +477,6 @@
                     });
                     
                     if (response.ok) {
-                        // Reload to show synced cart
                         location.reload();
                     }
                 }

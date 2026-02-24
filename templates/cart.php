@@ -2,771 +2,382 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛒 Корзина - Delivery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Корзина - Delivery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        accent: '#f59e0b'
+                        warm: {
+                            50: '#FFF9F5',
+                            100: '#FFF3EB',
+                            200: '#FFE4D1',
+                            300: '#FFC9A8',
+                            400: '#FFA573',
+                            500: '#FF7A3D',
+                            600: '#F05A1A',
+                            700: '#CC4412',
+                            800: '#A33510',
+                            900: '#7A2A0E',
+                        }
                     },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in',
-                        'bounce-gentle': 'bounceGentle 2s infinite'
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Custom animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes fadeOut {
-                from { opacity: 1; transform: translateY(0); }
-                to { opacity: 0; transform: translateY(-20px); }
-            }
-            @keyframes bounceGentle {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-5px); }
-            }
-            .animate-fade-in { animation: fadeIn 0.5s ease-in; }
-            .animate-bounce-gentle { animation: bounceGentle 2s infinite; }
-        `;
-        document.head.appendChild(style);
-    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .gradient-hero {
+            background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(240, 90, 26, 0.08);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FF7A3D 0%, #F05A1A 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(240, 90, 26, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-white to-yellow-50 min-h-screen">
+<body class="gradient-hero min-h-screen pb-32 md:pb-0">
     <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <nav class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-xl flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">K</span>
+    <header class="glass sticky top-0 z-50 border-b border-warm-100">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                        </svg>
                     </div>
-                    <a href="/" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
-                        Delivery
-                    </a>
+                    <span class="text-lg font-bold text-gray-800">Delivery</span>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/catalog" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Каталог</a>
+                    <a href="/orders" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Заказы</a>
+                    <a href="/chat" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Чат</a>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="/catalog" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">
-                        🛍️ Каталог
-                    </a>
-                    <a href="/cart" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-1">
-                        🛒 Корзина
-                        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                    </a>
-                    <?php if ($isLoggedIn): ?>
-                        <a href="/orders" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">📦 Заказы</a>
-                        <a href="/profile" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">👤 Профиль</a>
-                        <a href="/chat" class="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium">💬 Чат</a>
-                        <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                            <a href="/courier" class="text-orange-700 hover:text-orange-600 transition-colors duration-200 font-medium">🚚 Курьер</a>
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:block">
+                        <?php if ($isLoggedIn): ?>
+                            <div class="flex items-center space-x-3">
+                                <?php if (($user['role'] ?? 'user') === 'admin'): ?>
+                                    <a href="/admin" class="text-gray-600 hover:text-warm-600 font-medium transition-colors">Админ</a>
+                                <?php endif; ?>
+                                <a href="/profile" class="text-gray-600 hover:text-warm-600 font-medium transition-colors"><?php echo htmlspecialchars($user['name'] ?? 'Профиль'); ?></a>
+                                <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <a href="/login" class="btn-primary text-white px-5 py-2.5 rounded-full font-medium">Войти</a>
                         <?php endif; ?>
-                        <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                            <a href="/admin" class="text-purple-700 hover:text-purple-600 transition-colors duration-200 font-medium">⚙️ Админ</a>
-                        <?php endif; ?>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm text-gray-600">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</span>
-                            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                                Выход
-                            </button>
-                        </div>
-                    <?php else: ?>
-                        <a href="/login" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                            Войти
-                        </a>
-                        <a href="/register" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                            Регистрация
-                        </a>
-                    <?php endif; ?>
+                    </div>
                 </div>
-
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden text-gray-700 text-2xl">☰</button>
             </nav>
-
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-sm border-t border-gray-200">
-                <div class="px-4 py-4 space-y-2">
-                    <a href="/catalog" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                        🛍️ Каталог
-                    </a>
-                    <a href="/cart" class="block px-4 py-3 text-blue-600 font-semibold rounded-lg bg-blue-50 hover:bg-blue-100">
-                        🛒 Корзина
-                    </a>
-                    <?php if ($isLoggedIn): ?>
-                        <a href="/orders" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">📦 Заказы</a>
-                        <a href="/profile" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">👤 Профиль</a>
-                        <a href="/chat" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">💬 Чат</a>
-                        <?php if (($user['role'] ?? 'user') === 'courier'): ?>
-                            <a href="/courier" class="block px-4 py-3 text-orange-700 hover:bg-orange-50 rounded-lg transition-colors">🚚 Курьер</a>
-                        <?php endif; ?>
-                        <?php if (($user['role'] ?? 'user') === 'admin'): ?>
-                            <a href="/admin" class="block px-4 py-3 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors">⚙️ Админ</a>
-                        <?php endif; ?>
-                        <hr class="my-2">
-                        <div class="px-4 py-3">
-                            <p class="text-sm text-gray-600 mb-3">Привет, <?php echo htmlspecialchars($user['name'] ?? 'Пользователь'); ?>!</p>
-                            <button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                Выход
-                            </button>
-                        </div>
-                    <?php else: ?>
-                        <a href="/login" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                            Войти
-                        </a>
-                        <a href="/register" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                            Регистрация
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-8 animate-fade-in">
-        <div class="max-w-6xl mx-auto">
-            <div class="mb-8">
-                <h1 class="text-4xl font-bold text-gray-800 mb-4 flex items-center">
-                    <span class="mr-4">🛒</span> Ваша корзина
-                </h1>
-                <p class="text-gray-600 text-lg">Проверьте свои товары перед оформлением заказа</p>
+    <!-- Cart Content -->
+    <section class="px-4 py-6">
+        <div class="container mx-auto max-w-2xl">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Корзина</h1>
+            
+            <div id="cart-items" class="space-y-3">
+                <!-- Cart items will be rendered here -->
             </div>
+            
+            <div id="empty-cart" class="hidden text-center py-12">
+                <svg class="w-20 h-20 text-warm-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <p class="text-gray-500 mb-4">Корзина пуста</p>
+                <a href="/catalog" class="inline-block btn-primary text-white px-6 py-3 rounded-full font-medium">
+                    Перейти в каталог
+                </a>
+            </div>
+        </div>
+    </section>
 
-            <?php if (empty($cart)): ?>
-                <!-- Empty Cart -->
-                <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-16 text-center shadow-lg">
-                    <div class="text-8xl mb-6">🛒</div>
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Корзина пуста</h2>
-                    <p class="text-gray-600 mb-8 text-lg">Добавьте товары из нашего каталога, чтобы оформить заказ</p>
-                    <a href="/catalog" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg animate-bounce-gentle">
-                        <span class="mr-2">🛍️</span> Начать покупки
-                    </a>
-                </div>
+    <!-- Order Summary (Fixed at bottom on mobile) -->
+    <div id="order-summary" class="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto bg-white border-t border-gray-100 p-4 z-40 hidden">
+        <div class="container mx-auto max-w-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-600">Итого:</span>
+                <span id="total-price" class="text-xl font-bold text-gray-900">0 ₸</span>
+            </div>
+            <button onclick="checkout()" class="w-full btn-primary text-white py-4 rounded-2xl font-semibold text-lg">
+                Оформить заказ
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-30">
+        <div class="flex justify-around items-center h-16">
+            <a href="/" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="text-xs mt-1">Главная</span>
+            </a>
+            <a href="/catalog" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                </svg>
+                <span class="text-xs mt-1">Каталог</span>
+            </a>
+            <a href="/orders" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="text-xs mt-1">Заказы</span>
+            </a>
+            <a href="/cart" class="flex flex-col items-center justify-center text-warm-500">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-xs mt-1 font-medium">Корзина</span>
+            </a>
+            <?php if ($isLoggedIn): ?>
+            <a href="/profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="text-xs mt-1">Профиль</span>
+            </a>
             <?php else: ?>
-                <!-- Cart Items -->
-                <div class="space-y-6">
-                    <?php
-                    $total = 0;
-                    $itemCount = 0;
-                    foreach ($cart as $index => $item):
-                        // Skip items without price
-                        if (empty($item['price']) || empty($item['name'])) {
-                            continue;
-                        }
-                        
-                        $isWeighted = !empty($item['is_weighted']) && !empty($item['weight']);
-                        
-                        if ($isWeighted) {
-                            // Для весовых товаров цена уже рассчитана
-                            $itemTotal = floatval($item['price']);
-                            $itemCount += 1;
-                        } else {
-                            $itemTotal = floatval($item['price']) * intval($item['quantity']);
-                            $itemCount += intval($item['quantity']);
-                        }
-                        $total += $itemTotal;
-                    ?>
-                        <div class="bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in"
-                             style="animation-delay: <?php echo $index * 0.1; ?>s"
-                             data-cart-item-id="<?php echo $item['id']; ?>"
-                             data-is-weighted="<?php echo $isWeighted ? '1' : '0'; ?>"
-                             <?php if ($isWeighted): ?>
-                             data-weight="<?php echo $item['weight']; ?>"
-                             data-price-per-kg="<?php echo $item['price_per_kg'] ?? $item['price']; ?>"
-                             <?php endif; ?>>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-6">
-                                    <!-- Product Image Placeholder -->
-                                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center overflow-hidden">
-                                        <?php if (!empty($item['image_url'])): ?>
-                                            <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="w-full h-full object-cover">
-                                        <?php else: ?>
-                                            <span class="text-2xl">
-                                                <?php echo mb_substr($item['name'] ?? '', 0, 1, 'UTF-8'); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- Product Info -->
-                                    <div>
-                                        <h3 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($item['name'] ?? ''); ?></h3>
-                                        <?php if ($isWeighted): ?>
-                                            <p class="text-gray-600">
-                                                <span class="text-orange-600 font-semibold">⚖️ Весовой товар</span>
-                                            </p>
-                                            <p class="text-sm text-gray-500">
-                                                Цена за 1 кг: <span class="font-semibold"><?php echo number_format(floatval($item['price_per_kg'] ?? $item['price']), 0, '', ' '); ?></span> ₸
-                                            </p>
-                                        <?php else: ?>
-                                            <p class="text-gray-600">
-                                                <span class="item-price"><?php echo htmlspecialchars($item['price'] ?? '0'); ?></span> ₸
-                                                <?php if (!empty($item['weight_unit'])): ?>
-                                                    за <?php 
-                                                        $unit = $item['weight_unit'];
-                                                        if (is_numeric($unit)) {
-                                                            echo $unit >= 1000 ? ($unit / 1000) . 'кг' : $unit . 'г';
-                                                        } else {
-                                                            echo htmlspecialchars($unit);
-                                                        }
-                                                    ?>
-                                                <?php else: ?>
-                                                    за шт.
-                                                <?php endif; ?>
-                                            </p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center space-x-8">
-                                    <?php if ($isWeighted): ?>
-                                        <!-- Weight Display for weighted products -->
-                                        <div class="flex items-center space-x-3">
-                                            <span class="bg-orange-100 text-orange-800 px-4 py-2 rounded-lg font-semibold min-w-[5rem] text-center item-weight">
-                                                <?php 
-                                                    $weight = intval($item['weight']);
-                                                    echo $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
-                                                ?>
-                                            </span>
-                                            <button onclick="editWeight(<?php echo $item['id']; ?>)" 
-                                                    class="w-8 h-8 bg-blue-200 hover:bg-blue-300 rounded-full flex items-center justify-center transition-colors duration-200"
-                                                    title="Изменить вес">
-                                                <span class="text-sm">✎</span>
-                                            </button>
-                                        </div>
-                                    <?php else: ?>
-                                        <!-- Quantity Controls for regular products -->
-                                        <div class="flex items-center space-x-2">
-                                            <button onclick="decreaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
-                                                <span class="text-lg font-bold">-</span>
-                                            </button>
-                                            <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold min-w-[3rem] text-center item-quantity">
-                                                <?php echo htmlspecialchars($item['quantity']); ?>
-                                            </span>
-                                            <button onclick="increaseQuantity(this)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
-                                                <span class="text-lg font-bold">+</span>
-                                            </button>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <!-- Item Total -->
-                                    <div class="text-right">
-                                        <div class="text-2xl font-bold text-green-600 item-total">
-                                            <?php echo number_format($itemTotal, 0, '', ' '); ?> ₸
-                                        </div>
-                                        <?php if ($isWeighted): ?>
-                                            <div class="text-xs text-gray-500 item-calculation">
-                                                <?php 
-                                                    $weight = intval($item['weight']);
-                                                    $weightDisplay = $weight >= 1000 ? ($weight / 1000) . ' кг' : $weight . ' г';
-                                                    echo $weightDisplay . ' × ' . number_format(floatval($item['price_per_kg'] ?? $item['price']), 0, '', ' ') . ' ₸/кг';
-                                                ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- Remove Button -->
-                                    <button onclick="removeFromCart(<?php echo $item['id']; ?>)" class="text-red-500 hover:text-red-700 transition-colors duration-200">
-                                        <span class="text-xl">🗑️</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-
-                    <!-- Order Summary -->
-                    <div class="bg-gradient-to-r from-green-400/20 to-blue-400/20 backdrop-blur-sm rounded-3xl p-8 shadow-lg">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="text-2xl font-bold text-gray-800 mb-2">Итого к оплате</h3>
-                                <p class="text-gray-600">Доставка рассчитывается отдельно</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-4xl font-bold text-green-600 mb-2" id="cart-total">
-                                    <?php echo htmlspecialchars($total); ?> ₸
-                                </div>
-                                <div class="text-sm text-gray-500" id="cart-count-text">
-                                    <?php echo count($cart); ?> товар<?php echo count($cart) > 1 ? 'а' : ''; ?>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href="/catalog" class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-2xl font-semibold transition-colors duration-200">
-                                ← Продолжить покупки
-                            </a>
-                            <a href="/order" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg animate-pulse-soft">
-                                ✅ Оформить заказ
-                            </a>
-                        </div>
-                    </div>
-                </div>
+            <a href="/login" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+                <span class="text-xs mt-1">Войти</span>
+            </a>
             <?php endif; ?>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; <?php echo date('Y'); ?> Delivery. Все права защищены.</p>
-        </div>
-    </footer>
+    </nav>
 
     <script>
-        // Update cart count
-        function updateCartCount() {
-            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const cartCount = document.getElementById('cart-count');
-            if (count > 0) {
-                cartCount.textContent = count;
-                cartCount.classList.remove('hidden');
-            } else {
-                cartCount.classList.add('hidden');
-            }
-        }
+        let cart = [];
 
-        // Logout function
-        function logout() {
-            fetch('/api/auth/logout', { method: 'POST' })
-                .then(() => location.reload());
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCartCount();
-            loadCartItems();
+        function renderCart() {
+            cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const container = document.getElementById('cart-items');
+            const emptyCart = document.getElementById('empty-cart');
+            const orderSummary = document.getElementById('order-summary');
+            const bottomNav = document.querySelector('nav.md\\:hidden');
             
-            // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileMenuBtn && mobileMenu) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
-        });
-
-        // Load cart items dynamically
-        async function loadCartItems() {
-            try {
-                const response = await fetch('/api/cart');
-                if (response.ok) {
-                    const cart = await response.json();
-                    // For now, the cart is rendered server-side
-                    // In a more dynamic version, we could re-render the items here
-                }
-            } catch (error) {
-                console.error('Error loading cart:', error);
-            }
-        }
-
-        // Update quantity
-        async function updateQuantity(productId, newQuantity) {
-            // Validation
-            if (!productId || productId <= 0) {
-                showNotification('Ошибка: недопустимый товар', 'error');
+            if (cart.length === 0) {
+                container.innerHTML = '';
+                emptyCart.classList.remove('hidden');
+                orderSummary.classList.add('hidden');
+                bottomNav.classList.remove('hidden');
                 return;
             }
             
-            // Convert to integer if string
-            newQuantity = parseInt(newQuantity, 10);
+            emptyCart.classList.add('hidden');
+            orderSummary.classList.remove('hidden');
+            bottomNav.classList.add('hidden');
             
-            if (!Number.isInteger(newQuantity) || newQuantity < 0) {
-                showNotification('Ошибка: недопустимое количество', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/cart/update', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        product_id: parseInt(productId), 
-                        quantity: parseInt(newQuantity) 
-                    })
-                });
-
-                if (response.ok) {
-                    if (newQuantity === 0) {
-                        // Remove the item from DOM
-                        const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
-                        if (cartItem) {
-                            cartItem.style.animation = 'fadeOut 0.3s ease-out forwards';
-                            setTimeout(() => {
-                                cartItem.remove();
-                                
-                                // Check if cart is now empty
-                                const remainingItems = document.querySelectorAll('[data-cart-item-id]').length;
-                                if (remainingItems === 0) {
-                                    location.reload(); // Reload to show empty cart message
-                                } else {
-                                    // Only update totals if there are still items
-                                    updateCartTotal();
-                                    updateCartCount();
-                                }
-                            }, 300);
-                        }
-                        showNotification('Товар удален из корзины', 'success');
-                    } else {
-                        // Update the item display
-                        const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
-                        if (cartItem) {
-                            const quantityEl = cartItem.querySelector('.item-quantity');
-                            const priceEl = cartItem.querySelector('.item-price');
-                            const totalEl = cartItem.querySelector('.item-total');
-                            
-                            if (quantityEl && priceEl) {
-                                const price = parseFloat(priceEl.textContent);
-                                quantityEl.textContent = newQuantity;
-                                totalEl.textContent = (price * newQuantity) + ' ₸';
-                            }
-                        }
-                        showNotification('Количество обновлено', 'success');
-                        updateCartTotal();
-                        updateCartCount();
-                    }
-                } else {
-                    const error = await response.json();
-                    showNotification(error.error || 'Ошибка при обновлении количества', 'error');
-                }
-            } catch (error) {
-                showNotification('Ошибка сети: ' + error.message, 'error');
-            }
-        }
-
-        // Decrease quantity - called from button click
-        function decreaseQuantity(button) {
-            // Get the closest cart item container
-            const cartItem = button.closest('[data-cart-item-id]');
-            if (!cartItem) {
-                showNotification('Ошибка: товар не найден', 'error');
-                return;
-            }
-
-            const productId = cartItem.getAttribute('data-cart-item-id');
-            const quantityEl = cartItem.querySelector('.item-quantity');
-            const currentQuantity = parseInt(quantityEl.textContent, 10);
-            const newQuantity = currentQuantity - 1;
-
-            updateQuantity(productId, newQuantity);
-        }
-
-        // Increase quantity - called from button click
-        function increaseQuantity(button) {
-            // Get the closest cart item container
-            const cartItem = button.closest('[data-cart-item-id]');
-            if (!cartItem) {
-                showNotification('Ошибка: товар не найден', 'error');
-                return;
-            }
-
-            const productId = cartItem.getAttribute('data-cart-item-id');
-            const quantityEl = cartItem.querySelector('.item-quantity');
-            const currentQuantity = parseInt(quantityEl.textContent, 10);
-            const newQuantity = currentQuantity + 1;
-
-            updateQuantity(productId, newQuantity);
-        }
-
-        // Update cart total and item count
-        function updateCartTotal() {
-            let total = 0;
-            let itemCount = 0;
-            const cartItems = document.querySelectorAll('[data-cart-item-id]');
-            
-            cartItems.forEach(item => {
-                const quantityEl = item.querySelector('.item-quantity');
-                const priceEl = item.querySelector('.item-price');
+            container.innerHTML = cart.map((item, index) => {
+                const isWeighted = item.is_weighted;
+                const displayQty = isWeighted ? `${item.quantity} кг` : item.quantity;
+                const itemTotal = Math.round(item.price * item.quantity);
+                const qtyStep = isWeighted ? 0.1 : 1;
                 
-                if (quantityEl && priceEl) {
-                    const quantity = parseInt(quantityEl.textContent) || 0;
-                    const price = parseFloat(priceEl.textContent) || 0;
-                    
-                    // Validate parsed values
-                    if (!isNaN(quantity) && !isNaN(price) && quantity > 0 && price > 0) {
-                        total += price * quantity;
-                        itemCount += quantity;
-                    }
-                }
-            });
-            
-            const totalEl = document.getElementById('cart-total');
-            const countEl = document.getElementById('cart-count-text');
-            
-            if (totalEl) {
-                totalEl.textContent = total.toFixed(2) + ' ₸';
-            }
-            if (countEl) {
-                const itemWord = itemCount === 1 ? 'товар' : (itemCount % 10 === 1 && itemCount % 100 !== 11 ? 'товар' : 'товара');
-                countEl.textContent = itemCount + ' ' + itemWord;
-            }
-        }
-
-        // Remove from cart
-        async function removeFromCart(productId) {
-            // Validation
-            if (!productId || productId <= 0) {
-                showNotification('Ошибка: недопустимый товар', 'error');
-                return;
-            }
-
-            if (!confirm('Вы уверены, что хотите удалить этот товар из корзины?')) return;
-
-            try {
-                const response = await fetch(`/api/cart/${parseInt(productId)}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    // Remove the item from DOM
-                    const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
-                    if (cartItem) {
-                        cartItem.style.animation = 'fadeOut 0.3s ease-out forwards';
-                        setTimeout(() => {
-                            cartItem.remove();
-                            
-                            // Check if cart is empty and show empty message
-                            const remainingItems = document.querySelectorAll('[data-cart-item-id]').length;
-                            if (remainingItems === 0) {
-                                location.reload(); // Reload to show empty cart message
-                            } else {
-                                // Only update totals if there are still items in the cart
-                                updateCartTotal();
-                                updateCartCount();
-                            }
-                        }, 300);
-                    }
-                    showNotification('Товар удален из корзины', 'success');
-                } else {
-                    const error = await response.json();
-                    showNotification(error.error || 'Ошибка при удалении товара', 'error');
-                }
-            } catch (error) {
-                showNotification('Ошибка сети: ' + error.message, 'error');
-            }
-        }
-
-        // Add notification for cart updates
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-50 transform translate-x-full transition-transform duration-300 ${
-                type === 'success' ? 'bg-green-500 text-white' :
-                type === 'error' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
-            }`;
-            notification.innerHTML = `<span class="font-medium">${message}</span>`;
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.classList.remove('translate-x-full');
-            }, 100);
-
-            setTimeout(() => {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-        
-        // =====================
-        // Weight Product Functions
-        // =====================
-        let currentEditProductId = null;
-        
-        // Edit weight - show modal
-        function editWeight(productId) {
-            const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
-            if (!cartItem) return;
-            
-            currentEditProductId = productId;
-            const currentWeight = parseInt(cartItem.dataset.weight) || 500;
-            const pricePerKg = parseFloat(cartItem.dataset.pricePerKg) || 0;
-            
-            // Create modal
-            const modalHtml = `
-                <div id="weightEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div class="bg-white rounded-3xl p-8 max-w-md mx-4 shadow-2xl">
-                        <div class="text-center mb-6">
-                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span class="text-3xl">⚖️</span>
-                            </div>
-                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Изменить вес</h2>
-                            <p class="text-gray-600 text-sm">Цена за 1 кг: <span class="font-bold text-green-600">${pricePerKg.toLocaleString()}</span> ₸</p>
-                        </div>
+                return `
+                <div class="bg-white rounded-2xl p-4 card-shadow flex gap-4">
+                    <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-warm-50 to-warm-100 flex-shrink-0 overflow-hidden">
+                        ${item.image_url 
+                            ? `<img src="${item.image_url}" alt="${item.name}" class="w-full h-full object-cover">`
+                            : `<div class="w-full h-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-warm-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                </svg>
+                               </div>`
+                        }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-gray-900 truncate">${item.name}</h3>
+                        <p class="text-warm-600 font-bold mt-1">${item.price} ₸ ${isWeighted ? '/ кг' : ''}</p>
+                        <p class="text-sm text-gray-500 mt-1">Сумма: <span class="font-semibold text-gray-700">${itemTotal.toLocaleString('ru-RU')} ₸</span></p>
                         
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Вес (в граммах)</label>
-                                <input type="number" id="editWeightInput" min="100" step="100" value="${currentWeight}" 
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-xl font-bold"
-                                       oninput="calculateEditPrice(${pricePerKg})">
-                                <div class="flex justify-between mt-2 text-xs text-gray-500">
-                                    <span>Мин: 100г</span>
-                                    <span>1 кг = 1000г</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Quick weight buttons -->
-                            <div class="grid grid-cols-4 gap-2">
-                                <button type="button" onclick="setEditWeight(200, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">200г</button>
-                                <button type="button" onclick="setEditWeight(500, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">500г</button>
-                                <button type="button" onclick="setEditWeight(1000, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">1 кг</button>
-                                <button type="button" onclick="setEditWeight(2000, ${pricePerKg})" class="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">2 кг</button>
-                            </div>
-                            
-                            <!-- Calculated price -->
-                            <div class="bg-orange-50 p-4 rounded-xl border-2 border-orange-200">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">Итого:</span>
-                                    <span id="editWeightTotal" class="text-2xl font-bold text-green-600">${Math.round((currentWeight / 1000) * pricePerKg).toLocaleString()} ₸</span>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1 text-center" id="editWeightDisplay">${currentWeight >= 1000 ? (currentWeight / 1000) + ' кг' : currentWeight + ' г'} × ${pricePerKg.toLocaleString()} ₸/кг</p>
-                            </div>
-                            
-                            <div class="flex space-x-3">
-                                <button onclick="closeWeightEditModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-xl font-semibold transition-colors">
-                                    Отмена
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex items-center bg-warm-50 rounded-full">
+                                <button onclick="updateQuantity(${index}, -${qtyStep})" class="w-8 h-8 flex items-center justify-center text-warm-600 hover:bg-warm-100 rounded-full transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                    </svg>
                                 </button>
-                                <button onclick="confirmWeightEdit(${productId}, ${pricePerKg})" class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200">
-                                    Сохранить
+                                <input type="number" value="${item.quantity}" min="${isWeighted ? 0.1 : 1}" step="${qtyStep}"
+                                       onchange="setQuantity(${index}, this.value)"
+                                       class="w-12 text-center bg-transparent text-gray-900 font-medium text-sm outline-none">
+                                <button onclick="updateQuantity(${index}, ${qtyStep})" class="w-8 h-8 flex items-center justify-center text-warm-600 hover:bg-warm-100 rounded-full transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
                                 </button>
                             </div>
+                            <button onclick="removeItem(${index})" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
-            `;
+            `}).join('');
             
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            // Add click outside handler
-            document.getElementById('weightEditModal').addEventListener('click', function(e) {
-                if (e.target === this) closeWeightEditModal();
-            });
+            updateTotal();
         }
-        
-        function setEditWeight(weight, pricePerKg) {
-            document.getElementById('editWeightInput').value = weight;
-            calculateEditPrice(pricePerKg);
-        }
-        
-        function calculateEditPrice(pricePerKg) {
-            const weightInput = document.getElementById('editWeightInput');
-            let weight = parseInt(weightInput.value) || 100;
+
+        function updateQuantity(index, delta) {
+            const isWeighted = cart[index].is_weighted;
+            const minQty = isWeighted ? 0.1 : 1;
+            let newQty = cart[index].quantity + delta;
             
-            if (weight < 100) {
-                weight = 100;
-                weightInput.value = 100;
+            // Удаляем товар если количество меньше минимального
+            if (newQty < minQty) {
+                removeItem(index);
+                return;
             }
             
-            const totalPrice = Math.round((weight / 1000) * pricePerKg);
-            document.getElementById('editWeightTotal').textContent = totalPrice.toLocaleString() + ' ₸';
+            // Округляем для весовых товаров
+            if (isWeighted) {
+                newQty = Math.round(newQty * 10) / 10;
+            }
             
-            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
-            document.getElementById('editWeightDisplay').textContent = weightDisplay + ' × ' + pricePerKg.toLocaleString() + ' ₸/кг';
+            cart[index].quantity = newQty;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function setQuantity(index, value) {
+            const isWeighted = cart[index].is_weighted;
+            const minQty = isWeighted ? 0.1 : 1;
+            
+            let qty;
+            if (isWeighted) {
+                qty = parseFloat(value) || minQty;
+                qty = Math.round(qty * 10) / 10;
+            } else {
+                qty = parseInt(value) || 1;
+            }
+            
+            qty = Math.max(minQty, qty);
+            
+            cart[index].quantity = qty;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+            showToast('Товар удален');
+        }
+
+        function updateTotal() {
+            const total = cart.reduce((sum, item) => sum + Math.round(item.price * item.quantity), 0);
+            document.getElementById('total-price').textContent = total.toLocaleString('ru-RU') + ' ₸';
         }
         
-        function closeWeightEditModal() {
-            const modal = document.getElementById('weightEditModal');
-            if (modal) modal.remove();
-            currentEditProductId = null;
-        }
-        
-        async function confirmWeightEdit(productId, pricePerKg) {
-            const weight = parseInt(document.getElementById('editWeightInput').value) || 500;
-            const totalPrice = Math.round((weight / 1000) * pricePerKg);
-            
-            try {
-                // Отправляем обновление веса на сервер
-                const response = await fetch('/api/cart/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        product_id: productId,
-                        quantity: 1,
-                        weight: weight,
-                        is_weighted: true,
-                        calculated_price: totalPrice
-                    })
-                });
-                
-                if (response.ok) {
-                    // Обновляем отображение
-                    const cartItem = document.querySelector(`[data-cart-item-id="${productId}"]`);
-                    if (cartItem) {
-                        cartItem.dataset.weight = weight;
-                        
-                        const weightEl = cartItem.querySelector('.item-weight');
-                        if (weightEl) {
-                            weightEl.textContent = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
-                        }
-                        
-                        const totalEl = cartItem.querySelector('.item-total');
-                        if (totalEl) {
-                            totalEl.textContent = totalPrice.toLocaleString() + ' ₸';
-                        }
-                        
-                        const calcEl = cartItem.querySelector('.item-calculation');
-                        if (calcEl) {
-                            const weightDisplay = weight >= 1000 ? (weight / 1000) + ' кг' : weight + ' г';
-                            calcEl.textContent = weightDisplay + ' × ' + pricePerKg.toLocaleString() + ' ₸/кг';
-                        }
-                    }
-                    
-                    // Обновляем общую сумму
-                    updateCartTotalWeighted();
-                    
-                    closeWeightEditModal();
-                    showNotification('Вес обновлен', 'success');
+        function getCartItemCount() {
+            // Штучные товары считаем по количеству, весовые - как 1 позицию
+            return cart.reduce((sum, item) => {
+                if (item.is_weighted) {
+                    return sum + 1; // Весовой товар = 1 позиция
                 } else {
-                    const error = await response.json();
-                    showNotification(error.error || 'Ошибка при обновлении веса', 'error');
+                    return sum + Math.round(item.quantity); // Штучный = количество штук
                 }
-            } catch (error) {
-                showNotification('Ошибка сети: ' + error.message, 'error');
-            }
+            }, 0);
         }
-        
-        // Update cart total for weighted items
-        function updateCartTotalWeighted() {
-            let total = 0;
-            let itemCount = 0;
-            const cartItems = document.querySelectorAll('[data-cart-item-id]');
+
+        function checkout() {
+            if (cart.length === 0) {
+                showToast('Корзина пуста');
+                return;
+            }
             
-            cartItems.forEach(item => {
-                const isWeighted = item.dataset.isWeighted === '1';
-                const totalEl = item.querySelector('.item-total');
-                
-                if (totalEl) {
-                    // Извлекаем число из строки "1 234 ₸"
-                    const totalText = totalEl.textContent.replace(/[^\d]/g, '');
-                    const itemTotal = parseInt(totalText) || 0;
-                    total += itemTotal;
-                    itemCount++;
-                }
+            // Sync cart to server and redirect to order page
+            fetch('/api/cart/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: cart })
+            }).then(() => {
+                window.location.href = '/order';
+            }).catch(err => {
+                console.error('Error syncing cart:', err);
+                window.location.href = '/order';
             });
-            
-            const totalEl = document.getElementById('cart-total');
-            const countEl = document.getElementById('cart-count-text');
-            
-            if (totalEl) {
-                totalEl.textContent = total.toLocaleString() + ' ₸';
-            }
-            if (countEl) {
-                const itemWord = itemCount === 1 ? 'товар' : (itemCount > 1 && itemCount < 5 ? 'товара' : 'товаров');
-                countEl.textContent = itemCount + ' ' + itemWord;
-            }
         }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg z-50 text-sm font-medium';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCart();
+        });
     </script>
 </body>
 </html>

@@ -3,24 +3,24 @@
         "id": 1,
         "name": "Админ",
         "email": "admin@kazyna.kz",
-        "phone": "77001234567",
-        "password": "$2y$12$7woy96c0Pwh1LO1RYhwfYeLBHXaotWidVCIPhbevsTDnY2FyDtu8y",
+        "phone": "77771234567",
+        "password": "$2y$12$R.MkFh/XTnRmhZVqPg.8euVPq/kzHQzAt3F.xH5kK3/2PQQXTRwru",
         "role": "admin",
         "created_at": "2026-01-20T22:53:24Z"
     },
     {
         "id": 2,
-        "name": "Test User",
-        "phone": "user",
-        "password": "$2y$12$6Gu7E0BlkhKUvPVkLUFyq.FxH.Pb.n7pVS8FRB5kPJDTBWC\/ozueC",
-        "role": "user",
+        "name": "Курьер",
+        "phone": "77779998877",
+        "password": "$2y$12$ohXTcTtT4AO7Z6AsrSHBDuuCCXIj7E8Mu7aF0mkWWvVz5c5RPtphW",
+        "role": "courier",
         "created_at": "2026-01-20T17:59:18+00:00"
     },
     {
         "id": 3,
         "name": "TestAdmin",
         "phone": "test",
-        "password": "$2y$12$IAmX77Wz5qDbEZNwPCjJTukefqtONcfYpDt8Fa53FCN\/ZJTxGAvWy",
+        "password": "$2y$12$IAmX77Wz5qDbEZNwPCjJTukefqtONcfYpDt8Fa53FCN/ZJTxGAvWy",
         "role": "admin",
         "created_at": "2026-01-20T18:01:46+00:00"
     },
@@ -36,7 +36,7 @@
         "name": "Qwerty",
         "phone": "77000000000",
         "email": null,
-        "password": "$2y$12$wa2BOO8t5a6fFajY\/RpUouL4yisTd1xdjqsmf969cs6gTOeH.Aaie",
+        "password": "$2y$12$wa2BOO8t5a6fFajY/RpUouL4yisTd1xdjqsmf969cs6gTOeH.Aaie",
         "role": "user",
         "created_at": "2026-02-20T17:06:19+00:00",
         "id": 5

@@ -27,7 +27,16 @@ class SiteController extends Controller
      */
     public function home(Request $request): Response
     {
-        return $this->render('home');
+        // Курьеров редиректим на их страницу
+        if ($this->session->isCourier()) {
+            return $this->redirect('/courier');
+        }
+        
+        $categories = $this->categoryModel->getAll();
+        
+        return $this->render('home', [
+            'categories' => $categories
+        ]);
     }
     
     /**
@@ -41,8 +50,13 @@ class SiteController extends Controller
         }
         
         $categoryId = $request->get('category');
+        $searchQuery = $request->get('search');
         
-        if ($categoryId) {
+        if ($searchQuery) {
+            // Поиск по названию
+            $products = $this->productModel->search($searchQuery);
+            $products = array_values($products);
+        } elseif ($categoryId) {
             $products = $this->productModel->getByCategory(intval($categoryId));
         } else {
             $products = $this->productModel->getAllWithCategories();
@@ -116,14 +130,18 @@ class SiteController extends Controller
     public function getProducts(Request $request): Response
     {
         $categoryId = $request->get('category');
+        $searchQuery = $request->get('search');
         
-        if ($categoryId) {
+        if ($searchQuery) {
+            $products = $this->productModel->search($searchQuery);
+            $products = array_values($products);
+        } elseif ($categoryId) {
             $products = $this->productModel->getByCategory(intval($categoryId));
         } else {
             $products = $this->productModel->getAllWithCategories();
         }
         
-        return $this->json(array_values($products));
+        return $this->json($products);
     }
     
     /**

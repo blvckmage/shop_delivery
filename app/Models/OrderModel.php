@@ -16,16 +16,12 @@ class OrderModel
     
     // Статусы заказов
     public const STATUS_CREATED = 'СОЗДАН';
-    public const STATUS_ASSEMBLY = 'СБОРКА';
-    public const STATUS_WAITING_COURIER = 'ОЖИДАНИЕ_КУРЬЕРА';
     public const STATUS_ON_THE_WAY = 'В_ПУТИ';
     public const STATUS_DELIVERED = 'ДОСТАВЛЕН';
     public const STATUS_CANCELLED = 'ОТМЕНЕН';
     
     public const VALID_STATUSES = [
         self::STATUS_CREATED,
-        self::STATUS_ASSEMBLY,
-        self::STATUS_WAITING_COURIER,
         self::STATUS_ON_THE_WAY,
         self::STATUS_DELIVERED,
         self::STATUS_CANCELLED
@@ -93,7 +89,7 @@ class OrderModel
         $orders = $this->getAll();
         return array_filter($orders, function($order) {
             // Показываем заказы со статусом В_ПУТИ без назначенного курьера
-            return $order['status'] === self::STATUS_ON_THE_WAY 
+            return $order['status'] === self::STATUS_ON_THE_WAY
                 && empty($order['courier_id']);
         });
     }
@@ -180,8 +176,8 @@ class OrderModel
             $updates['courier_id'] = $courierId;
         }
         
-        // При возврате в ожидание курьера - сбрасываем курьера
-        if ($status === self::STATUS_WAITING_COURIER) {
+        // При отмене - сбрасываем курьера
+        if ($status === self::STATUS_CANCELLED) {
             $updates['courier_id'] = null;
         }
         

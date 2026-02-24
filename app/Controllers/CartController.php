@@ -254,23 +254,32 @@ class CartController extends Controller
         $cart = [];
         foreach ($items as $item) {
             if (isset($item['id'])) {
+                $isWeightedItem = !empty($item['is_weighted']);
+                
+                // Для весовых товаров quantity = вес в кг (может быть дробным)
+                // Для штучных - количество штук (целое)
+                if ($isWeightedItem) {
+                    $quantity = floatval($item['quantity'] ?? 0.5);
+                    $quantity = max(0.1, round($quantity * 10) / 10); // Округляем до 0.1
+                } else {
+                    $quantity = max(1, intval($item['quantity'] ?? 1));
+                }
+                
                 $cartItem = [
                     'id' => intval($item['id']),
-                    'quantity' => max(1, intval($item['quantity'] ?? 1))
+                    'quantity' => $quantity,
+                    'is_weighted' => $isWeightedItem ? 1 : 0
                 ];
                 
-                // Сохраняем данные весового товара
-                if (!empty($item['is_weighted']) || !empty($item['weight'])) {
-                    $cartItem['is_weighted'] = true;
-                    if (!empty($item['weight'])) {
-                        $cartItem['weight'] = intval($item['weight']);
-                    }
-                    if (!empty($item['calculated_price'])) {
-                        $cartItem['calculated_price'] = floatval($item['calculated_price']);
-                    }
-                    if (!empty($item['price_per_kg'])) {
-                        $cartItem['price_per_kg'] = floatval($item['price_per_kg']);
-                    }
+                // Сохраняем дополнительные данные
+                if (!empty($item['image_url'])) {
+                    $cartItem['image_url'] = $item['image_url'];
+                }
+                if (!empty($item['name'])) {
+                    $cartItem['name'] = $item['name'];
+                }
+                if (!empty($item['price'])) {
+                    $cartItem['price'] = floatval($item['price']);
                 }
                 
                 $cart[] = $cartItem;
@@ -313,10 +322,14 @@ class CartController extends Controller
                 $isWeighted = !empty($item['is_weighted']) || !empty($product['is_weighted']);
                 $item['is_weighted'] = $isWeighted ? 1 : 0;
                 
-                if ($isWeighted && !empty($item['weight'])) {
-                    // Для весового товара используем рассчитанную цену
-                    $item['price'] = $item['calculated_price'] ?? $this->calculateWeightedPrice($product, intval($item['weight']));
-                    $item['price_per_kg'] = $product['price']; // Цена за кг для отображения
+                if ($isWeighted) {
+                    // Для весового товара quantity = вес в кг
+                    // Цена = цена за кг * вес
+                    $weightKg = floatval($item['quantity'] ?? 0.5);
+                    $pricePerKg = floatval($product['price']);
+                    $item['price'] = $pricePerKg; // Цена за кг для отображения
+                    // Рассчитанная цена хранится в calculated_price или вычисляется
+                    $item['calculated_price'] = round($weightKg * $pricePerKg);
                 } else {
                     $item['price'] = $product['price'];
                 }
