@@ -124,7 +124,7 @@
     </header>
 
     <!-- Cart Content -->
-    <section class="px-4 py-6">
+    <section class="px-4 py-6 pb-40 md:pb-6">
         <div class="container mx-auto max-w-2xl">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">Корзина</h1>
             
@@ -157,8 +157,8 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-30">
+    <!-- Mobile Bottom Navigation - hidden on cart page when has items -->
+    <nav id="bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-30">
         <div class="flex justify-around items-center h-16">
             <a href="/" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,19 +210,19 @@
             const container = document.getElementById('cart-items');
             const emptyCart = document.getElementById('empty-cart');
             const orderSummary = document.getElementById('order-summary');
-            const bottomNav = document.querySelector('nav.md\\:hidden');
+            const bottomNav = document.getElementById('bottom-nav');
             
             if (cart.length === 0) {
                 container.innerHTML = '';
                 emptyCart.classList.remove('hidden');
                 orderSummary.classList.add('hidden');
-                bottomNav.classList.remove('hidden');
+                if (bottomNav) bottomNav.classList.remove('hidden');
                 return;
             }
             
             emptyCart.classList.add('hidden');
             orderSummary.classList.remove('hidden');
-            bottomNav.classList.add('hidden');
+            if (bottomNav) bottomNav.classList.add('hidden');
             
             container.innerHTML = cart.map((item, index) => {
                 const isWeighted = item.is_weighted;

@@ -180,6 +180,37 @@
                 </a>
             </div>
             
+            <?php if (($user['role'] ?? 'user') === 'admin'): ?>
+            <!-- Admin Panel Button for Mobile -->
+            <a href="/admin" class="md:hidden bg-white rounded-2xl p-4 card-shadow flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-warm-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Админ панель</p>
+                    <p class="text-sm text-gray-500">Управление магазином</p>
+                </div>
+            </a>
+            <?php endif; ?>
+            
+            <?php if (($user['role'] ?? 'user') === 'courier'): ?>
+            <!-- Courier Panel Button for Mobile -->
+            <a href="/courier" class="md:hidden bg-white rounded-2xl p-4 card-shadow flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-warm-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Курьер</p>
+                    <p class="text-sm text-gray-500">Доставки</p>
+                </div>
+            </a>
+            <?php endif; ?>
+            
             <!-- Edit Profile Form -->
             <div class="bg-white rounded-2xl p-6 card-shadow">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Редактировать профиль</h2>
@@ -257,6 +288,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                 </svg>
                 <span class="text-xs mt-1">Корзина</span>
+                <span id="cart-badge-mobile" class="hidden absolute top-0 right-4 w-4 h-4 bg-warm-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">0</span>
             </a>
             <a href="/profile" class="flex flex-col items-center justify-center text-warm-500">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -268,6 +300,29 @@
     </nav>
 
     <script>
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            // Штучные товары считаем по количеству, весовые - как 1 позицию
+            const count = cart.reduce((sum, item) => {
+                if (item.is_weighted) {
+                    return sum + 1; // Весовой товар = 1 позиция
+                } else {
+                    return sum + Math.round(item.quantity); // Штучный = количество штук
+                }
+            }, 0);
+            
+            const cartBadgeMobile = document.getElementById('cart-badge-mobile');
+            
+            if (count > 0) {
+                if (cartBadgeMobile) {
+                    cartBadgeMobile.textContent = count > 9 ? '9+' : count;
+                    cartBadgeMobile.classList.remove('hidden');
+                }
+            } else {
+                if (cartBadgeMobile) cartBadgeMobile.classList.add('hidden');
+            }
+        }
+
         async function updateProfile(e) {
             e.preventDefault();
             
@@ -314,6 +369,10 @@
         function logout() {
             fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+        });
     </script>
 </body>
 </html>

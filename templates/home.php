@@ -240,6 +240,35 @@
         </div>
     </section>
 
+    <!-- Auth Required Modal -->
+    <div id="authRequiredModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/30" onclick="closeAuthModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-warm-100 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Требуется авторизация</h3>
+                <p class="text-gray-500 text-sm mb-6">Войдите в свой аккаунт или зарегистрируйтесь, чтобы добавлять товары в корзину</p>
+                
+                <div class="space-y-3">
+                    <a href="/login" class="block w-full btn-primary text-white py-3 rounded-xl font-medium text-center">
+                        Войти
+                    </a>
+                    <a href="/register" class="block w-full py-3 border border-warm-200 text-warm-600 rounded-xl font-medium text-center hover:bg-warm-50 transition-colors">
+                        Зарегистрироваться
+                    </a>
+                </div>
+                
+                <button onclick="closeAuthModal()" class="mt-4 text-gray-400 hover:text-gray-600 text-sm">
+                    Продолжить без авторизации
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notifications Modal -->
     <div id="notificationsModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/30" onclick="closeNotifications()"></div>
@@ -305,6 +334,9 @@
     </nav>
 
     <script>
+        // Check if user is logged in
+        const isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+        
         let searchTimeout;
         
         // Live search
@@ -356,7 +388,14 @@
 
         function updateCartCount() {
             const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            // Штучные товары считаем по количеству, весовые - как 1 позицию
+            const count = cart.reduce((sum, item) => {
+                if (item.is_weighted) {
+                    return sum + 1; // Весовой товар = 1 позиция
+                } else {
+                    return sum + Math.round(item.quantity); // Штучный = количество штук
+                }
+            }, 0);
             
             const cartCount = document.getElementById('cart-count');
             const cartBadgeMobile = document.getElementById('cart-badge-mobile');
@@ -413,35 +452,27 @@
                             <p class="text-warm-600 font-bold">${product.price} <span class="text-sm font-normal text-gray-500">₸</span></p>
                             ${product.is_weighted ? '<p class="text-xs text-gray-400">за 1 кг</p>' : ''}
                         </a>
-                        <button onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, ${product.is_weighted || 0}, '${product.image_url || ''}')"
-                                class="w-full mt-3 py-2.5 bg-warm-50 hover:bg-warm-100 text-warm-600 font-medium rounded-xl transition-colors text-sm">
-                            В корзину
-                        </button>
+                        <a href="/catalog?product=${product.id}"
+                                class="block w-full mt-3 py-2.5 bg-warm-50 hover:bg-warm-100 text-warm-600 font-medium rounded-xl transition-colors text-sm text-center">
+                            Подробнее
+                        </a>
                     </div>
                 </div>
             `).join('');
         }
 
-        function addToCart(id, name, price, isWeighted, imageUrl) {
-            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            
-            const existingIndex = cart.findIndex(item => item.id === id);
-            if (existingIndex >= 0) {
-                cart[existingIndex].quantity += 1;
-            } else {
-                cart.push({
-                    id: id,
-                    name: name,
-                    price: price,
-                    quantity: 1,
-                    is_weighted: isWeighted,
-                    image_url: imageUrl
-                });
-            }
-            
-            localStorage.setItem('cart', JSON.stringify(cart));
-            updateCartCount();
-            showToast('Добавлено в корзину');
+        // Auth Modal functions
+        function showAuthModal() {
+            document.getElementById('authRequiredModal').classList.remove('hidden');
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('authRequiredModal').classList.add('hidden');
+        }
+        
+        function addToCart(id) {
+            // Redirect to catalog page
+            window.location.href = '/catalog?product=' + id;
         }
 
         function showToast(message) {
@@ -522,6 +553,13 @@
         }
 
         async function updateNotificationBadge() {
+            // Skip if user is not logged in
+            if (!isLoggedIn) {
+                const badge = document.getElementById('notification-badge');
+                if (badge) badge.classList.add('hidden');
+                return;
+            }
+            
             try {
                 const response = await fetch('/api/notifications/unread-count');
                 if (response.ok) {
@@ -546,9 +584,32 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            updateCartCount();
-            loadProducts();
-            updateNotificationBadge();
+            // Clear cart if user is not logged in
+            if (!isLoggedIn) {
+                localStorage.removeItem('cart');
+            }
+            
+            // Normalize cart data format
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (cart && cart.length > 0) {
+                cart = cart.map(item => ({
+                    id: parseInt(item.id),
+                    name: item.name,
+                    price: parseInt(item.price),
+                    quantity: parseFloat(item.quantity) || 1,
+                    is_weighted: parseInt(item.is_weighted) || 0,
+                    image_url: item.image_url || ''
+                }));
+                localStorage.setItem('cart', JSON.stringify(cart));
+            }
+            
+            // Update UI after small delay to ensure DOM is ready
+            setTimeout(() => {
+                updateCartCount();
+                loadProducts();
+                updateNotificationBadge();
+            }, 100);
+            
             setInterval(updateNotificationBadge, 30000);
         });
     </script>

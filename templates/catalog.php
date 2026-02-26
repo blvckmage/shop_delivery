@@ -195,7 +195,7 @@
                         <?php endif; ?>
                         
                         <!-- Badge for quantity in cart -->
-                        <div id="cart-badge-<?php echo $product['id']; ?>" class="hidden absolute top-2 right-2 w-7 h-7 bg-warm-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
+                        <div id="cart-badge-<?php echo $product['id']; ?>" class="hidden absolute top-2 right-2 min-w-7 h-7 px-1.5 bg-warm-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
                             0
                         </div>
                     </div>
@@ -228,8 +228,37 @@
         </div>
     </section>
 
+    <!-- Auth Required Modal -->
+    <div id="authRequiredModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/30" onclick="closeAuthModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-warm-100 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Требуется авторизация</h3>
+                <p class="text-gray-500 text-sm mb-6">Войдите в свой аккаунт или зарегистрируйтесь, чтобы добавлять товары в корзину</p>
+                
+                <div class="space-y-3">
+                    <a href="/login" class="block w-full btn-primary text-white py-3 rounded-xl font-medium text-center">
+                        Войти
+                    </a>
+                    <a href="/register" class="block w-full py-3 border border-warm-200 text-warm-600 rounded-xl font-medium text-center hover:bg-warm-50 transition-colors">
+                        Зарегистрироваться
+                    </a>
+                </div>
+                
+                <button onclick="closeAuthModal()" class="mt-4 text-gray-400 hover:text-gray-600 text-sm">
+                    Продолжить без авторизации
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Weight Modal -->
-    <div id="weightModal" class="fixed inset-0 z-50 hidden">
+    <div id="weightModal" class="fixed inset-0 hidden" style="z-index: 100;">
         <div class="absolute inset-0 bg-black/30" onclick="closeWeightModal()"></div>
         <div class="absolute bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-sm md:w-full bg-white md:rounded-2xl rounded-t-3xl p-6">
             <div class="flex justify-between items-center mb-4">
@@ -321,6 +350,18 @@
     </nav>
 
     <script>
+        // Check if user is logged in
+        const isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+        
+        // Auth Modal functions
+        function showAuthModal() {
+            document.getElementById('authRequiredModal').classList.remove('hidden');
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('authRequiredModal').classList.add('hidden');
+        }
+        
         // Product data from PHP
         const products = <?php 
             $productsData = [];
@@ -353,7 +394,7 @@
         
         function getCartItem(productId) {
             const cart = getCart();
-            return cart.find(item => item.id === productId);
+            return cart.find(item => parseInt(item.id) === parseInt(productId));
         }
         
         function updateAllUI() {
@@ -408,7 +449,8 @@
             
             if (badge) {
                 if (quantity > 0) {
-                    badge.textContent = quantity > 9 ? '9+' : quantity;
+                    // Для весовых товаров показываем вес, для штучных - количество
+                    badge.textContent = product.is_weighted ? quantity.toFixed(1) : (quantity > 9 ? '9+' : quantity);
                     badge.classList.remove('hidden');
                 } else {
                     badge.classList.add('hidden');
@@ -448,15 +490,21 @@
         }
         
         function addToCart(productId) {
+            // Check if user is logged in
+            if (!isLoggedIn) {
+                showAuthModal();
+                return;
+            }
+            
             const product = productMap[productId];
             if (!product) return;
             
-            if (product.is_weighted) {
+            if (product.is_weighted == 1) {
                 // Show weight modal
                 openWeightModal(product);
             } else {
                 // Add regular product
-                const cart = getCart();
+                let cart = getCart();
                 const existingIndex = cart.findIndex(item => item.id === productId);
                 
                 if (existingIndex >= 0) {
@@ -478,6 +526,12 @@
         }
         
         function increaseQuantity(productId) {
+            // Check if user is logged in
+            if (!isLoggedIn) {
+                showAuthModal();
+                return;
+            }
+            
             const product = productMap[productId];
             if (!product) return;
             
@@ -597,7 +651,29 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            updateAllUI();
+            // Clear cart if user is not logged in
+            if (!isLoggedIn) {
+                localStorage.removeItem('cart');
+            }
+            
+            // Normalize cart data format
+            let cart = getCart();
+            if (cart && cart.length > 0) {
+                cart = cart.map(item => ({
+                    id: parseInt(item.id),
+                    name: item.name,
+                    price: parseInt(item.price),
+                    quantity: parseFloat(item.quantity) || 1,
+                    is_weighted: parseInt(item.is_weighted) || 0,
+                    image_url: item.image_url || ''
+                }));
+                localStorage.setItem('cart', JSON.stringify(cart));
+            }
+            
+            // Update UI after small delay to ensure DOM is ready
+            setTimeout(() => {
+                updateAllUI();
+            }, 100);
         });
     </script>
 </body>
