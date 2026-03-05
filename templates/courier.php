@@ -240,10 +240,18 @@
         }
         
         function showOrderOnMap(address) {
-            initMap();
-            
             document.getElementById('map-section').classList.remove('hidden');
             document.getElementById('map-address').textContent = address;
+            
+            // Инициализируем карту после показа контейнера
+            initMap();
+            
+            // Обновляем размер карты после показа контейнера
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize(true);
+                }
+            }, 100);
             
             // Geocode address
             geocodeAddress(address);
@@ -562,7 +570,56 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadOrders();
+            startLocationTracking();
         });
+        
+        // ==================== ГЕОЛОКАЦИЯ ====================
+        
+        let watchId = null;
+        
+        function startLocationTracking() {
+            if (!navigator.geolocation) {
+                console.log('Геолокация не поддерживается браузером');
+                return;
+            }
+            
+            // Запрашиваем местоположение сразу
+            navigator.geolocation.getCurrentPosition(
+                (position) => sendLocation(position.coords.latitude, position.coords.longitude),
+                (error) => console.log('Ошибка получения местоположения:', error.message),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+            
+            // Отслеживаем перемещение
+            watchId = navigator.geolocation.watchPosition(
+                (position) => sendLocation(position.coords.latitude, position.coords.longitude),
+                (error) => console.log('Ошибка отслеживания местоположения:', error.message),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+            );
+        }
+        
+        function stopLocationTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+        
+        async function sendLocation(lat, lng) {
+            try {
+                await fetch('/api/courier/location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat, lng })
+                });
+                console.log('Местоположение обновлено:', lat, lng);
+            } catch (error) {
+                console.error('Ошибка отправки местоположения:', error);
+            }
+        }
+        
+        // Останавливаем отслеживание при уходе со страницы
+        window.addEventListener('beforeunload', stopLocationTracking);
     </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
         "name": "Админ",
         "email": "admin@kazyna.kz",
         "phone": "77771234567",
-        "password": "$2y$12$R.MkFh/XTnRmhZVqPg.8euVPq/kzHQzAt3F.xH5kK3/2PQQXTRwru",
+        "password": "$2y$12$FafGRvErAzWD7SoPLanoQetFBrpAMNgf37jc90ZfaiX6.NQvjtd/O",
         "role": "admin",
         "created_at": "2026-01-20T22:53:24Z"
     },
@@ -33,12 +33,21 @@
         "created_at": "2026-01-30T10:32:38+00:00"
     },
     {
+        "id": 5,
         "name": "Qwerty",
         "phone": "77000000000",
         "email": null,
         "password": "$2y$12$wa2BOO8t5a6fFajY/RpUouL4yisTd1xdjqsmf969cs6gTOeH.Aaie",
         "role": "user",
-        "created_at": "2026-02-20T17:06:19+00:00",
-        "id": 5
+        "created_at": "2026-02-20T17:06:19+00:00"
+    },
+    {
+        "id": 6,
+        "name": "Сборщик",
+        "phone": "77771112233",
+        "email": "picker@kazyna.kz",
+        "password": "$2y$12$4Ahz41XF1aQiRAslXd1inudxTNy5IdOLwUcvM0vJH29bxUH.6LaRC",
+        "role": "picker",
+        "created_at": "2026-03-05T12:00:00+00:00"
     }
 ]

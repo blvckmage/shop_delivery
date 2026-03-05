@@ -83,6 +83,8 @@ class AuthController extends Controller
         $redirect = '/profile';
         if ($user['role'] === 'courier') {
             $redirect = '/courier';
+        } elseif ($user['role'] === 'picker') {
+            $redirect = '/picker';
         } elseif ($user['role'] === 'admin') {
             $redirect = '/admin';
         }

@@ -172,6 +172,14 @@ class UserModel
     }
     
     /**
+     * Получить сборщиков
+     */
+    public function getPickers(): array
+    {
+        return $this->getByRole('picker');
+    }
+    
+    /**
      * Получить админов
      */
     public function getAdmins(): array

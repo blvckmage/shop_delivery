@@ -135,6 +135,14 @@ class Session
     }
     
     /**
+     * Проверка сборщика
+     */
+    public function isPicker(): bool
+    {
+        return $this->hasRole('picker');
+    }
+    
+    /**
      * Выход из системы
      */
     public function logout(): void

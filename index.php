@@ -88,6 +88,9 @@ $router->get('/admin', [App\Controllers\AdminController::class, 'dashboard']);
 // Курьер
 $router->get('/courier', [App\Controllers\ApiController::class, 'courierPage']);
 
+// Сборщик
+$router->get('/picker', [App\Controllers\ApiController::class, 'pickerPage']);
+
 // ==================== API: АВТОРИЗАЦИЯ ====================
 
 $router->post('/api/auth/login', [App\Controllers\AuthController::class, 'login']);
@@ -214,6 +217,11 @@ $router->get('/api/notifications', [App\Controllers\ApiController::class, 'getNo
 $router->get('/api/notifications/unread-count', [App\Controllers\ApiController::class, 'getUnreadCount']);
 $router->post('/api/notifications/{id}/read', [App\Controllers\ApiController::class, 'markNotificationRead']);
 $router->post('/api/notifications/read-all', [App\Controllers\ApiController::class, 'markAllNotificationsRead']);
+
+// ==================== API: СБОРЩИК ====================
+
+$router->get('/api/picker/orders', [App\Controllers\ApiController::class, 'pickerOrders']);
+$router->post('/api/picker/assemble/{id}', [App\Controllers\ApiController::class, 'pickerAssembleOrder']);
 
 // ==================== ДИСПЕТЧЕРИЗАЦИЯ ====================
 

@@ -844,8 +844,8 @@
                             <p class="text-sm text-gray-500">${u.phone || ''}</p>
                         </div>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-600' : u.role === 'courier' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
-                        ${u.role === 'admin' ? 'Админ' : u.role === 'courier' ? 'Курьер' : 'Клиент'}
+                    <span class="px-3 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-600' : u.role === 'courier' ? 'bg-blue-100 text-blue-600' : u.role === 'picker' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}">
+                        ${u.role === 'admin' ? 'Админ' : u.role === 'courier' ? 'Курьер' : u.role === 'picker' ? 'Сборщик' : 'Клиент'}
                     </span>
                 </div>
             `).join('');
@@ -893,6 +893,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
                             <select id="userRole" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
                                 <option value="user" ${user.role === 'user' ? 'selected' : ''}>Клиент</option>
+                                <option value="picker" ${user.role === 'picker' ? 'selected' : ''}>Сборщик</option>
                                 <option value="courier" ${user.role === 'courier' ? 'selected' : ''}>Курьер</option>
                                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Админ</option>
                             </select>

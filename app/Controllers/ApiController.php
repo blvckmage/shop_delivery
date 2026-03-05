@@ -23,6 +23,113 @@ class ApiController extends Controller
         $this->orderModel = new OrderModel($this->db);
     }
     
+    // ==================== СБОРЩИК ====================
+    
+    /**
+     * Страница сборщика
+     */
+    public function pickerPage(Request $request): Response
+    {
+        $error = $this->requirePicker();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        return $this->render('picker');
+    }
+    
+    /**
+     * API: Получить заказы для сборщика
+     */
+    public function pickerOrders(Request $request): Response
+    {
+        $error = $this->requirePicker();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        // Получаем заказы со статусом "СОЗДАН" (для сборки)
+        $allOrders = $this->orderModel->getAll();
+        $pendingOrders = array_filter($allOrders, function($order) {
+            return $order['status'] === OrderModel::STATUS_CREATED;
+        });
+        
+        // Получаем заказы, собранные сегодня (из архива)
+        $archive = $this->orderModel->getArchive();
+        $pickerId = $this->getUserId();
+        $today = date('Y-m-d');
+        
+        $completedToday = array_filter($archive, function($order) use ($pickerId, $today) {
+            return isset($order['picker_id']) && $order['picker_id'] == $pickerId
+                && strpos($order['assembled_at'] ?? '', $today) === 0;
+        });
+        
+        // Получаем собранные заказы (статус В_ПУТИ и выше, собранные этим сборщиком)
+        $completedOrders = array_filter($allOrders, function($order) use ($pickerId) {
+            return isset($order['picker_id']) && $order['picker_id'] == $pickerId
+                && $order['status'] !== OrderModel::STATUS_CREATED;
+        });
+        
+        return $this->json([
+            'pending' => array_values($pendingOrders),
+            'completed' => array_values(array_merge($completedOrders, $completedToday)),
+            'completed_today' => count($completedToday)
+        ]);
+    }
+    
+    /**
+     * API: Отметить заказ как собранный
+     */
+    public function pickerAssembleOrder(Request $request, int $id): Response
+    {
+        $error = $this->requirePicker();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        // Получаем заказ
+        $order = $this->orderModel->findById($id);
+        
+        if (!$order) {
+            return $this->error('Заказ не найден', 404);
+        }
+        
+        // Проверяем статус
+        if ($order['status'] !== OrderModel::STATUS_CREATED) {
+            return $this->error('Заказ уже обработан', 400);
+        }
+        
+        // Обновляем заказ: меняем статус на В_ПУТИ и записываем сборщика
+        $this->orderModel->update($id, [
+            'picker_id' => $this->getUserId(),
+            'assembled_at' => date('c')
+        ]);
+        
+        // Уведомление для пользователя о смене статуса
+        self::notifyUser(
+            $this->db,
+            $order['user_id'],
+            'order_assembled',
+            'Заказ собран',
+            "Ваш заказ #{$id} собран и скоро будет передан курьеру!",
+            ['order_id' => $id]
+        );
+        
+        // Уведомление для админов
+        self::notifyAdmins(
+            $this->db,
+            'order_assembled',
+            'Заказ собран',
+            "Сборщик {$this->getUser()['name']} собрал заказ #{$id}",
+            ['order_id' => $id, 'picker_id' => $this->getUserId()]
+        );
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Заказ отмечен как собранный'
+        ]);
+    }
+    
     // ==================== КУРЬЕР ====================
     
     /**

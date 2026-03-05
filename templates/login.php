@@ -148,6 +148,7 @@
                 <p class="text-sm text-gray-500 mb-2">Демо аккаунты:</p>
                 <p class="text-xs text-gray-400">Админ: +7 777 123 4567 / admin</p>
                 <p class="text-xs text-gray-400">Курьер: +7 777 999 8877 / courier</p>
+                <p class="text-xs text-gray-400">Сборщик: +7 777 111 2233 / 123</p>
             </div>
         </div>
     </main>
@@ -203,7 +204,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    window.location.href = '/';
+                    window.location.href = data.redirect || '/';
                 } else {
                     errorEl.textContent = data.error || 'Ошибка входа';
                     errorEl.classList.remove('hidden');
