@@ -15,10 +15,7 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: DB_HOST
-        fromService:
-          name: delivery-shop-db
-          type: pserv
-          property: host
+        value: delivery-shop-db
       - key: DB_PORT
         value: "3306"
       - key: DB_NAME
@@ -46,8 +43,10 @@ services:
   # База данных MySQL
   - type: pserv
     name: delivery-shop-db
-    env: docker
+    env: image
     plan: free
+    image:
+      url: mysql:8.0
     envVars:
       - key: MYSQL_ROOT_PASSWORD
         generateValue: true
