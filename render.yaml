@@ -17,7 +17,7 @@ services:
       - key: DB_PORT
         value: "3306"
       - key: DB_NAME
-        value: delivery_shop
+        sync: false
       - key: DB_USER
         sync: false
       - key: DB_PASS

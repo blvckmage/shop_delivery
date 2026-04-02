@@ -48,7 +48,7 @@ init_mysql() {
     
     echo "MySQL is up!"
     
-    # Инициализация БД
+    # Инициализация БД (создание таблиц)
     if [ -f "/var/www/html/database/schema.sql" ]; then
         TABLE_EXISTS=$(php -r "
             try {
@@ -66,7 +66,21 @@ init_mysql() {
         
         if [ "$TABLE_EXISTS" = "0" ]; then
             echo "Initializing database schema..."
-            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < /var/www/html/database/schema.sql 2>/dev/null || true
+            # Выполняем SQL напрямую через PHP (для совместимости с Railway)
+            php -r "
+                try {
+                    \$pdo = new PDO(
+                        'mysql:host=' . getenv('DB_HOST') . ';port=' . getenv('DB_PORT') . ';dbname=' . getenv('DB_NAME'),
+                        getenv('DB_USER'),
+                        getenv('DB_PASS')
+                    );
+                    \$sql = file_get_contents('/var/www/html/database/schema.sql');
+                    \$pdo->exec(\$sql);
+                    echo 'Schema applied successfully';
+                } catch (Exception \$e) {
+                    echo 'Error: ' . \$e->getMessage();
+                }
+            " 2>/dev/null || true
             echo "Database schema initialized!"
         fi
     fi

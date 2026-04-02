@@ -1,9 +1,7 @@
 -- =====================================================
 -- Delivery Shop v2 - MySQL Schema
+-- Используйте существующую базу данных (railway на Railway, delivery_shop локально)
 -- =====================================================
-
-CREATE DATABASE IF NOT EXISTS delivery_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE delivery_shop;
 
 -- Таблица пользователей
 CREATE TABLE IF NOT EXISTS users (
