@@ -18,9 +18,7 @@ RewriteBase /
 </FilesMatch>
 
 # Запрет доступа к JSON файлам в data/
-<If "req.uri =~ m#^/data/.*\.json$#">
-    Require all denied
-</If>
+RewriteRule ^data/.*\.json$ - [F,L]
 
 # Запрет доступа к файлам базы данных
 <FilesMatch "\.(sqlite|db|sql)$">
