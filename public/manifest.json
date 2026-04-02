@@ -42,45 +42,6 @@
             "purpose": "any"
         }
     ],
-    "shortcuts": [
-        {
-            "name": "Каталог",
-            "short_name": "Каталог",
-            "description": "Перейти в каталог товаров",
-            "url": "/catalog",
-            "icons": [{ "src": "/icons/catalog-icon.png", "sizes": "96x96" }]
-        },
-        {
-            "name": "Корзина",
-            "short_name": "Корзина",
-            "description": "Открыть корзину",
-            "url": "/cart",
-            "icons": [{ "src": "/icons/cart-icon.png", "sizes": "96x96" }]
-        },
-        {
-            "name": "Мои заказы",
-            "short_name": "Заказы",
-            "description": "История заказов",
-            "url": "/orders",
-            "icons": [{ "src": "/icons/orders-icon.png", "sizes": "96x96" }]
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "/screenshots/home.png",
-            "sizes": "1080x1920",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Главная страница"
-        },
-        {
-            "src": "/screenshots/catalog.png",
-            "sizes": "1080x1920",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Каталог товаров"
-        }
-    ],
     "related_applications": [],
     "prefer_related_applications": false
 }
