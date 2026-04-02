@@ -133,14 +133,11 @@ class OrderController extends Controller
         
         // Создаем уведомление для админов (без прерывания если ошибка)
         try {
-            \App\Controllers\ApiController::createNotification(
+            \App\Controllers\ApiController::notifyAdmins(
                 $this->db,
                 'new_order',
                 'Новый заказ',
                 "Поступил новый заказ #{$orderId} на сумму " . $this->calculateOrderTotal($items) . ' ₸',
-                null,
-                'admin',
-                false,
                 ['order_id' => $orderId]
             );
         } catch (\Exception $e) {

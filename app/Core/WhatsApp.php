@@ -157,7 +157,11 @@ class WhatsApp
      */
     public function notifyNewOrder(array $order): bool
     {
-        $items = json_decode($order['items'] ?? '[]', true);
+        // items может быть уже массивом или JSON строкой
+        $items = $order['items'] ?? [];
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?? [];
+        }
         $itemsList = '';
         $total = 0;
         
