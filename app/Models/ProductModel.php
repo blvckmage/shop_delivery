@@ -39,21 +39,12 @@ class ProductModel
      */
     public function getAllWithCategories(): array
     {
-        $products = $this->getAll();
-        $categories = (new CategoryModel($this->db))->getAll();
+        $sql = "SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                ORDER BY p.id";
         
-        $categoryMap = [];
-        foreach ($categories as $cat) {
-            $categoryMap[$cat['id']] = $cat['name'];
-        }
-        
-        foreach ($products as &$product) {
-            if (!empty($product['category_id']) && isset($categoryMap[$product['category_id']])) {
-                $product['category_name'] = $categoryMap[$product['category_id']];
-            }
-        }
-        
-        return $products;
+        return $this->db->query($sql);
     }
     
     /**
@@ -76,8 +67,7 @@ class ProductModel
             'category_id' => intval($data['category_id']),
             'image_url' => Security::sanitize($data['image_url'] ?? ''),
             'is_weighted' => intval($data['is_weighted'] ?? 0),
-            'weight_unit' => Security::sanitize($data['weight_unit'] ?? ''),
-            'created_at' => date('c')
+            'weight_unit' => Security::sanitize($data['weight_unit'] ?? '')
         ];
         
         return $this->db->insert($this->table, $product);
@@ -118,6 +108,10 @@ class ProductModel
             $updates['weight_unit'] = Security::sanitize($data['weight_unit']);
         }
         
+        if (empty($updates)) {
+            return false;
+        }
+        
         return $this->db->update($this->table, $id, $updates);
     }
     
@@ -134,14 +128,13 @@ class ProductModel
      */
     public function search(string $query): array
     {
-        $products = $this->getAll();
-        $query = mb_strtolower(trim($query), 'UTF-8');
+        $sql = "SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE p.name LIKE ? OR p.description LIKE ?
+                ORDER BY p.name";
         
-        return array_filter($products, function($product) use ($query) {
-            $name = mb_strtolower($product['name'] ?? '', 'UTF-8');
-            $description = mb_strtolower($product['description'] ?? '', 'UTF-8');
-            
-            return strpos($name, $query) !== false || strpos($description, $query) !== false;
-        });
+        $searchTerm = "%{$query}%";
+        return $this->db->query($sql, [$searchTerm, $searchTerm]);
     }
 }

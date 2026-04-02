@@ -183,21 +183,39 @@
                     
                     <!-- Stats -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="bg-white rounded-2xl p-4 card-shadow">
+                        <div onclick="showSection('orders')" class="bg-white rounded-2xl p-4 card-shadow cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border-2 border-transparent hover:border-warm-200">
                             <p class="text-sm text-gray-500">Заказы</p>
                             <p id="stat-orders" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                            <p class="text-xs text-warm-400 mt-1 flex items-center gap-1">
+                                Перейти
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </p>
                         </div>
                         <div class="bg-white rounded-2xl p-4 card-shadow">
                             <p class="text-sm text-gray-500">Выручка</p>
                             <p id="stat-revenue" class="text-2xl font-bold text-warm-500 mt-1">0 ₸</p>
                         </div>
-                        <div class="bg-white rounded-2xl p-4 card-shadow">
+                        <div onclick="showSection('users')" class="bg-white rounded-2xl p-4 card-shadow cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border-2 border-transparent hover:border-warm-200">
                             <p class="text-sm text-gray-500">Пользователи</p>
                             <p id="stat-users" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                            <p class="text-xs text-warm-400 mt-1 flex items-center gap-1">
+                                Перейти
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </p>
                         </div>
-                        <div class="bg-white rounded-2xl p-4 card-shadow">
+                        <div onclick="showSection('products')" class="bg-white rounded-2xl p-4 card-shadow cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border-2 border-transparent hover:border-warm-200">
                             <p class="text-sm text-gray-500">Товары</p>
                             <p id="stat-products" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                            <p class="text-xs text-warm-400 mt-1 flex items-center gap-1">
+                                Перейти
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </p>
                         </div>
                     </div>
                     
@@ -238,14 +256,43 @@
                 
                 <!-- Products Section -->
                 <section id="section-products" class="space-y-4 hidden">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
                         <h1 class="text-2xl font-bold text-gray-900">Товары</h1>
-                        <button onclick="openProductModal()" class="btn-primary text-white px-4 py-2 rounded-xl font-medium text-sm">
-                            Добавить товар
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="openImportModal()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                </svg>
+                                Импорт CSV
+                            </button>
+                            <button onclick="openProductModal()" class="btn-primary text-white px-4 py-2 rounded-xl font-medium text-sm">
+                                Добавить товар
+                            </button>
+                        </div>
                     </div>
-                    <div id="products-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <p class="text-gray-500 text-center py-8 col-span-full">Загрузка...</p>
+                    
+                    <!-- Поиск и фильтры товаров -->
+                    <div class="bg-white rounded-2xl p-4 card-shadow">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <input type="text" id="productSearch" placeholder="Поиск по названию..." 
+                                       oninput="filterProducts()"
+                                       class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                            </div>
+                            <div class="md:w-64">
+                                <select id="productCategoryFilter" onchange="filterProducts()"
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                                    <option value="">Все категории</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="products-list" class="space-y-3">
+                        <p class="text-gray-500 text-center py-8">Загрузка...</p>
                     </div>
                 </section>
                 
@@ -254,6 +301,30 @@
                     <div class="flex justify-between items-center">
                         <h1 class="text-2xl font-bold text-gray-900">Пользователи</h1>
                     </div>
+                    
+                    <!-- Поиск и фильтры пользователей -->
+                    <div class="bg-white rounded-2xl p-4 card-shadow">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <input type="text" id="userSearch" placeholder="Поиск по имени или телефону..." 
+                                       oninput="filterUsers()"
+                                       class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                            </div>
+                            <div class="md:w-64">
+                                <select id="userRoleFilter" onchange="filterUsers()"
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                                    <option value="">Все роли</option>
+                                    <option value="admin">Админы</option>
+                                    <option value="courier">Курьеры</option>
+                                    <option value="user">Клиенты</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div id="users-list" class="space-y-3">
                         <p class="text-gray-500 text-center py-8">Загрузка...</p>
                     </div>
@@ -288,37 +359,37 @@
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-40">
         <div class="flex justify-around items-center h-16">
-            <button onclick="showSection('dashboard')" class="flex flex-col items-center justify-center text-warm-500">
+            <button onclick="showSection('dashboard')" id="mobile-nav-dashboard" class="flex flex-col items-center justify-center text-warm-500">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                 </svg>
                 <span class="text-xs mt-1 font-medium">Главная</span>
             </button>
-            <button onclick="showSection('orders')" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            <button onclick="showSection('orders')" id="mobile-nav-orders" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
                 <span class="text-xs mt-1">Заказы</span>
             </button>
-            <button onclick="showSection('couriers')" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            <button onclick="showSection('couriers')" id="mobile-nav-couriers" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
                 </svg>
                 <span class="text-xs mt-1">Курьеры</span>
             </button>
-            <button onclick="showSection('products')" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            <button onclick="showSection('products')" id="mobile-nav-products" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                 </svg>
                 <span class="text-xs mt-1">Товары</span>
             </button>
-            <button onclick="showSection('users')" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            <button onclick="showSection('users')" id="mobile-nav-users" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
                 <span class="text-xs mt-1">Люди</span>
             </button>
-            <button onclick="showSection('chat')" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            <button onclick="showSection('chat')" id="mobile-nav-chat" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                 </svg>
@@ -352,8 +423,25 @@
             sections.forEach(s => {
                 const section = document.getElementById(`section-${s}`);
                 const nav = document.getElementById(`nav-${s}`);
+                const mobileNav = document.getElementById(`mobile-nav-${s}`);
+                
                 if (section) section.classList.toggle('hidden', s !== name);
                 if (nav) nav.classList.toggle('active', s === name);
+                
+                // Обновляем цвета мобильной навигации
+                if (mobileNav) {
+                    if (s === name) {
+                        mobileNav.classList.remove('text-gray-400');
+                        mobileNav.classList.add('text-warm-500');
+                        const span = mobileNav.querySelector('span');
+                        if (span) span.classList.add('font-medium');
+                    } else {
+                        mobileNav.classList.add('text-gray-400');
+                        mobileNav.classList.remove('text-warm-500');
+                        const span = mobileNav.querySelector('span');
+                        if (span) span.classList.remove('font-medium');
+                    }
+                }
             });
             
             if (name === 'dashboard') loadDashboard();
@@ -446,6 +534,18 @@
                         </span>
                     </div>
                     <p class="text-sm text-gray-600 mb-2">${o.address || 'Адрес не указан'}</p>
+                    
+                    ${o.courier_name ? `
+                        <div class="mb-3 p-2 bg-blue-50 rounded-xl flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                            </svg>
+                            <div>
+                                <p class="text-xs text-blue-600 font-medium">Курьер: ${o.courier_name}</p>
+                                ${o.courier_phone ? `<p class="text-xs text-blue-500">${o.courier_phone}</p>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
                     
                     ${!isArchive ? `
                         <!-- Селектор статуса -->
@@ -596,33 +696,71 @@
 
         async function loadProducts() {
             try {
-                const response = await fetch('/api/admin/products');
-                const products = await response.json();
+                const [productsRes, categoriesRes] = await Promise.all([
+                    fetch('/api/admin/products'),
+                    fetch('/api/categories')
+                ]);
+                const products = await productsRes.json();
+                const categories = await categoriesRes.json();
+                
+                // Заполняем фильтр категорий
+                const categoryFilter = document.getElementById('productCategoryFilter');
+                categoryFilter.innerHTML = '<option value="">Все категории</option>' + 
+                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                
+                allProducts = products;
+                allProductsOriginal = products; // Сохраняем оригинальный список
                 renderProducts(products);
             } catch (error) {
                 document.getElementById('products-list').innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">Ошибка загрузки</p>';
             }
         }
+        
+        function filterProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            const categoryId = document.getElementById('productCategoryFilter').value;
+            
+            // Если оба фильтра пустые - показываем все товары из оригинального списка
+            if (!searchTerm && !categoryId) {
+                renderProducts(allProductsOriginal);
+                return;
+            }
+            
+            const filtered = allProductsOriginal.filter(p => {
+                const matchesSearch = !searchTerm || (p.name && p.name.toLowerCase().includes(searchTerm));
+                const matchesCategory = !categoryId || p.category_id == categoryId;
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderProducts(filtered);
+        }
 
         let allProducts = [];
+        let allProductsOriginal = []; // Сохраняем оригинальный список
         
         function renderProducts(products) {
-            allProducts = products;
             const container = document.getElementById('products-list');
             if (!products || products.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">Нет товаров</p>';
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет товаров</p>';
                 return;
             }
             
             container.innerHTML = products.map(p => `
                 <div onclick="openEditProductModal(${p.id})" 
-                     class="bg-white rounded-2xl p-4 card-shadow cursor-pointer hover:shadow-lg transition-shadow">
-                    <div class="aspect-square bg-gradient-to-br from-warm-50 to-warm-100 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover rounded-xl">` : '<svg class="w-12 h-12 text-warm-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>'}
+                     class="bg-white rounded-2xl p-4 card-shadow flex items-center justify-between cursor-pointer hover:shadow-lg transition-shadow">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-50 to-warm-100 flex items-center justify-center overflow-hidden">
+                            ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover rounded-xl">` : '<svg class="w-6 h-6 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>'}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">${p.name}</p>
+                            <p class="text-sm text-gray-500">${p.category_name || ''}</p>
+                        </div>
                     </div>
-                    <h3 class="font-medium text-gray-900 truncate">${p.name}</h3>
-                    <p class="text-warm-600 font-bold">${p.price} ₸</p>
-                    <p class="text-xs text-gray-400 mt-1">${p.is_weighted ? 'Весовой товар' : 'Штучный товар'}</p>
+                    <div class="text-right">
+                        <p class="font-bold text-warm-600">${p.price} ₸</p>
+                        <p class="text-xs text-gray-400">${p.is_weighted ? 'Весовой' : 'Штучный'}</p>
+                    </div>
                 </div>
             `).join('');
         }
@@ -816,6 +954,8 @@
             try {
                 const response = await fetch('/api/admin/users');
                 const users = await response.json();
+                allUsers = users;
+                allUsersOriginal = users; // Сохраняем оригинальный список
                 renderUsers(users);
             } catch (error) {
                 document.getElementById('users-list').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки</p>';
@@ -823,9 +963,30 @@
         }
 
         let allUsers = [];
+        let allUsersOriginal = []; // Сохраняем оригинальный список
+        
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const roleFilter = document.getElementById('userRoleFilter').value;
+            
+            // Если оба фильтра пустые - показываем всех пользователей из оригинального списка
+            if (!searchTerm && !roleFilter) {
+                renderUsers(allUsersOriginal);
+                return;
+            }
+            
+            const filtered = allUsersOriginal.filter(u => {
+                const matchesSearch = !searchTerm || 
+                    (u.name && u.name.toLowerCase().includes(searchTerm)) || 
+                    (u.phone && u.phone.toLowerCase().includes(searchTerm));
+                const matchesRole = !roleFilter || u.role === roleFilter;
+                return matchesSearch && matchesRole;
+            });
+            
+            renderUsers(filtered);
+        }
         
         function renderUsers(users) {
-            allUsers = users;
             const container = document.getElementById('users-list');
             if (!users || users.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет пользователей</p>';
@@ -840,7 +1001,14 @@
                             ${(u.name || 'U')[0]}
                         </div>
                         <div>
-                            <p class="font-medium text-gray-900">${u.name || 'Без имени'}</p>
+                            <p class="font-medium text-gray-900 flex items-center">
+                                ${u.name || 'Без имени'}
+                                ${u.whatsapp_notifications ? `
+                                    <svg class="w-4 h-4 ml-2 text-green-500" fill="currentColor" viewBox="0 0 24 24" title="Получает WhatsApp уведомления">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                    </svg>
+                                ` : ''}
+                            </p>
                             <p class="text-sm text-gray-500">${u.phone || ''}</p>
                         </div>
                     </div>
@@ -858,13 +1026,40 @@
             if (!user) return;
             
             currentUserData = user;
+            
+            // Показываем настройки WhatsApp только для админов и сборщиков
+            const showWhatsApp = user.role === 'admin' || user.role === 'picker';
+            const whatsAppSection = showWhatsApp ? `
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        WhatsApp уведомления
+                    </h4>
+                    <div class="space-y-3">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="userWhatsAppNotifications" ${user.whatsapp_notifications ? 'checked' : ''} 
+                                   class="w-5 h-5 text-green-500 rounded border-gray-300 focus:ring-green-500">
+                            <span class="ml-3 text-sm text-gray-700">Получать уведомления о заказах</span>
+                        </label>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">WhatsApp номер (если отличается от телефона)</label>
+                            <input type="text" id="userWhatsAppPhone" value="${user.whatsapp_phone || ''}" 
+                                   placeholder="+7 700 123 45 67"
+                                   class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-green-300 focus:ring-2 focus:ring-green-100 outline-none text-sm">
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
             const modal = document.createElement('div');
             modal.id = 'userModal';
             modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
             modal.innerHTML = `
                 <div class="absolute inset-0 bg-black/30" onclick="closeUserModal()"></div>
-                <div class="relative bg-white rounded-2xl max-w-md w-full">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                <div class="relative bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white p-4 border-b border-gray-100 flex justify-between items-center z-10">
                         <h3 class="text-lg font-bold text-gray-900">Редактирование пользователя</h3>
                         <button onclick="closeUserModal()" class="p-2 hover:bg-gray-100 rounded-full">
                             <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -891,13 +1086,13 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
-                            <select id="userRole" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                            <select id="userRole" onchange="handleRoleChange()" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
                                 <option value="user" ${user.role === 'user' ? 'selected' : ''}>Клиент</option>
-                                <option value="picker" ${user.role === 'picker' ? 'selected' : ''}>Сборщик</option>
                                 <option value="courier" ${user.role === 'courier' ? 'selected' : ''}>Курьер</option>
                                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Админ</option>
                             </select>
                         </div>
+                        ${whatsAppSection}
                         <div class="flex gap-3 pt-4">
                             <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-xl font-medium">
                                 Сохранить
@@ -932,6 +1127,17 @@
                 role: document.getElementById('userRole').value
             };
             
+            // Добавляем WhatsApp настройки, если они есть
+            const whatsappNotificationsEl = document.getElementById('userWhatsAppNotifications');
+            const whatsappPhoneEl = document.getElementById('userWhatsAppPhone');
+            
+            if (whatsappNotificationsEl) {
+                userData.whatsapp_notifications = whatsappNotificationsEl.checked ? 1 : 0;
+            }
+            if (whatsappPhoneEl) {
+                userData.whatsapp_phone = whatsappPhoneEl.value;
+            }
+            
             try {
                 const response = await fetch(`/api/admin/users/${userId}`, {
                     method: 'PUT',
@@ -949,6 +1155,48 @@
                 }
             } catch (error) {
                 showToast('Ошибка соединения');
+            }
+        }
+        
+        function handleRoleChange() {
+            const roleSelect = document.getElementById('userRole');
+            const selectedRole = roleSelect.value;
+            
+            // Находим или создаем секцию WhatsApp
+            let whatsappSection = document.getElementById('whatsappSection');
+            
+            // Показываем настройки WhatsApp только для админов и сборщиков
+            if (selectedRole === 'admin' || selectedRole === 'picker') {
+                if (!whatsappSection) {
+                    const form = document.getElementById('userForm');
+                    const submitBtn = form.querySelector('button[type="submit"]').parentElement;
+                    
+                    const sectionHtml = `
+                        <div id="whatsappSection" class="border-t border-gray-100 pt-4 mt-4">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                </svg>
+                                WhatsApp уведомления
+                            </h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="userWhatsAppNotifications" class="w-5 h-5 text-green-500 rounded border-gray-300 focus:ring-green-500">
+                                    <span class="ml-3 text-sm text-gray-700">Получать уведомления о заказах</span>
+                                </label>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">WhatsApp номер (если отличается от телефона)</label>
+                                    <input type="text" id="userWhatsAppPhone" placeholder="+7 700 123 45 67" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-green-300 focus:ring-2 focus:ring-green-100 outline-none text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    submitBtn.insertAdjacentHTML('beforebegin', sectionHtml);
+                }
+            } else {
+                if (whatsappSection) {
+                    whatsappSection.remove();
+                }
             }
         }
         
@@ -1165,220 +1413,6 @@
             }
         }
 
-        async function loadCouriers() {
-            try {
-                const [couriersRes, requestsRes] = await Promise.all([
-                    fetch('/api/admin/couriers'),
-                    fetch('/api/admin/courier-requests')
-                ]);
-                
-                const couriers = await couriersRes.json();
-                const requests = await requestsRes.json();
-                
-                let html = '<h2 class="text-lg font-semibold text-gray-900 mb-3">Запросы на заказы</h2>';
-                
-                if (requests && requests.length > 0) {
-                    html += requests.map(r => `
-                        <div class="bg-white rounded-2xl p-4 card-shadow mb-3">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-medium text-gray-900">Заказ #${r.order_id}</p>
-                                    <p class="text-sm text-gray-500">Курьер: ${r.courier_name}</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="confirmCourier(${r.order_id}, ${r.courier_id})" class="px-4 py-2 btn-primary text-white rounded-xl text-sm font-medium">
-                                        Подтвердить
-                                    </button>
-                                    <button onclick="rejectCourier(${r.order_id})" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-medium transition-colors">
-                                        Отклонить
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    html += '<p class="text-gray-500 text-center py-4 mb-4">Нет запросов</p>';
-                }
-                
-                html += '<h2 class="text-lg font-semibold text-gray-900 mb-3 mt-6">Курьеры</h2>';
-                
-                if (couriers && couriers.length > 0) {
-                    html += couriers.map(c => `
-                        <div class="bg-white rounded-2xl p-4 card-shadow mb-3 flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
-                                    ${(c.name || 'K')[0]}
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">${c.name || 'Без имени'}</p>
-                                    <p class="text-sm text-gray-500">${c.phone || ''}</p>
-                                </div>
-                            </div>
-                            <span class="px-3 py-1 rounded-full text-xs font-medium ${c.current_order ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}">
-                                ${c.current_order ? 'На заказе' : 'Свободен'}
-                            </span>
-                        </div>
-                    `).join('');
-                } else {
-                    html += '<p class="text-gray-500 text-center py-4">Нет курьеров</p>';
-                }
-                
-                document.getElementById('couriers-list').innerHTML = html;
-            } catch (error) {
-                document.getElementById('couriers-list').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки</p>';
-            }
-        }
-
-        let chatUsers = [];
-        
-        async function loadChatUsers() {
-            try {
-                const response = await fetch('/api/admin/chat/users');
-                const users = await response.json();
-                chatUsers = users;
-                renderChatUsers(users);
-            } catch (error) {
-                document.getElementById('chat-users').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки</p>';
-            }
-        }
-
-        function renderChatUsers(users) {
-            const container = document.getElementById('chat-users');
-            if (!users || users.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет чатов</p>';
-                return;
-            }
-            
-            container.innerHTML = users.map(u => `
-                <div onclick="openChatModal(${u.id})" 
-                     class="bg-white rounded-2xl p-4 card-shadow flex items-center justify-between cursor-pointer hover:shadow-lg transition-shadow">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
-                            ${(u.name || 'U')[0]}
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900">${u.name || 'Гость'}</p>
-                            <p class="text-sm text-gray-500 truncate max-w-xs">${u.last_message || 'Нет сообщений'}</p>
-                        </div>
-                    </div>
-                    ${u.unread_count ? `<span class="px-2 py-1 bg-warm-500 text-white text-xs rounded-full">${u.unread_count}</span>` : ''}
-                </div>
-            `).join('');
-        }
-        
-        let currentChatUserId = null;
-        
-        async function openChatModal(userId) {
-            currentChatUserId = userId;
-            const user = chatUsers.find(u => u.id === userId);
-            
-            const modal = document.createElement('div');
-            modal.id = 'chatModal';
-            modal.className = 'fixed inset-0 z-50 flex items-end md:items-center justify-center';
-            modal.innerHTML = `
-                <div class="absolute inset-0 bg-black/30" onclick="closeChatModal()"></div>
-                <div class="relative bg-white w-full md:max-w-md md:rounded-2xl h-[80vh] md:h-[70vh] flex flex-col">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
-                                ${(user?.name || 'U')[0]}
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-gray-900">${user?.name || 'Гость'}</h3>
-                                <p class="text-xs text-gray-500">${user?.phone || ''}</p>
-                            </div>
-                        </div>
-                        <button onclick="closeChatModal()" class="p-2 hover:bg-gray-100 rounded-full">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
-                        <p class="text-gray-500 text-center py-4">Загрузка...</p>
-                    </div>
-                    <form id="chatForm" class="p-4 border-t border-gray-100 flex gap-2">
-                        <input type="text" id="chatInput" placeholder="Введите сообщение..." 
-                               class="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
-                        <button type="submit" class="btn-primary text-white px-4 py-3 rounded-xl">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            // Загружаем сообщения
-            await loadChatMessages(userId);
-            
-            // Обработчик отправки
-            document.getElementById('chatForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await sendChatMessage(userId);
-            });
-        }
-        
-        async function loadChatMessages(userId) {
-            try {
-                const response = await fetch(`/api/admin/chat/messages/${userId}`);
-                const messages = await response.json();
-                renderChatMessages(messages);
-            } catch (error) {
-                document.getElementById('chatMessages').innerHTML = '<p class="text-gray-500 text-center py-4">Ошибка загрузки</p>';
-            }
-        }
-        
-        function renderChatMessages(messages) {
-            const container = document.getElementById('chatMessages');
-            if (!messages || messages.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">Нет сообщений</p>';
-                return;
-            }
-            
-            container.innerHTML = messages.map(m => `
-                <div class="flex ${m.sender_role === 'admin' ? 'justify-end' : 'justify-start'}">
-                    <div class="max-w-[80%] ${m.sender_role === 'admin' ? 'bg-warm-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-2xl px-4 py-2">
-                        <p class="text-sm">${m.message}</p>
-                        <p class="text-xs ${m.sender_role === 'admin' ? 'text-warm-100' : 'text-gray-400'} mt-1">${formatDate(m.created_at)}</p>
-                    </div>
-                </div>
-            `).join('');
-            
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        async function sendChatMessage(userId) {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            try {
-                const response = await fetch('/api/admin/chat/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, message })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    input.value = '';
-                    await loadChatMessages(userId);
-                } else {
-                    showToast('Ошибка отправки');
-                }
-            } catch (error) {
-                showToast('Ошибка соединения');
-            }
-        }
-        
-        function closeChatModal() {
-            const modal = document.getElementById('chatModal');
-            if (modal) modal.remove();
-        }
-        
         // Карта курьеров
         let couriersMap = null;
         let couriersMarkers = [];
@@ -1386,62 +1420,47 @@
         
         async function loadCouriers() {
             try {
-                const [couriersRes, requestsRes] = await Promise.all([
-                    fetch('/api/admin/couriers'),
-                    fetch('/api/admin/courier-requests')
-                ]);
+                const couriersRes = await fetch('/api/admin/couriers');
                 
                 const couriers = await couriersRes.json();
-                const requests = await requestsRes.json();
                 couriersData = couriers;
                 
                 // Обновляем карту
                 updateCouriersMap(couriers);
                 
-                let html = '<h2 class="text-lg font-semibold text-gray-900 mb-3">Запросы на заказы</h2>';
-                
-                if (requests && requests.length > 0) {
-                    html += requests.map(r => `
-                        <div class="bg-white rounded-2xl p-4 card-shadow mb-3">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-medium text-gray-900">Заказ #${r.order_id}</p>
-                                    <p class="text-sm text-gray-500">Курьер: ${r.courier_name}</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="confirmCourier(${r.order_id}, ${r.courier_id})" class="px-4 py-2 btn-primary text-white rounded-xl text-sm font-medium">
-                                        Подтвердить
-                                    </button>
-                                    <button onclick="rejectCourier(${r.order_id})" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-medium transition-colors">
-                                        Отклонить
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    html += '<p class="text-gray-500 text-center py-4 mb-4">Нет запросов</p>';
-                }
-                
-                html += '<h2 class="text-lg font-semibold text-gray-900 mb-3 mt-6">Курьеры</h2>';
+                let html = '<h2 class="text-lg font-semibold text-gray-900 mb-3">Курьеры</h2>';
                 
                 if (couriers && couriers.length > 0) {
                     html += couriers.map(c => `
                         <div onclick="focusCourierOnMap(${c.id})" 
-                             class="bg-white rounded-2xl p-4 card-shadow mb-3 flex items-center justify-between cursor-pointer hover:shadow-lg transition-all ${c.location ? 'hover:border-warm-300 border-2 border-transparent' : ''}">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
-                                    ${(c.name || 'K')[0]}
+                             class="bg-white rounded-2xl p-4 card-shadow mb-3 cursor-pointer hover:shadow-lg transition-all ${c.location ? 'hover:border-warm-300 border-2 border-transparent' : ''}">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
+                                        ${(c.name || 'K')[0]}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">${c.name || 'Без имени'}</p>
+                                        <p class="text-sm text-gray-500">${c.phone || ''}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">${c.name || 'Без имени'}</p>
-                                    <p class="text-sm text-gray-500">${c.phone || ''}</p>
-                                    ${c.location ? `<p class="text-xs text-warm-500">📍 Показать на карте</p>` : ''}
-                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${c.current_order ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}">
+                                    ${c.current_order ? 'На заказе' : 'Свободен'}
+                                </span>
                             </div>
-                            <span class="px-3 py-1 rounded-full text-xs font-medium ${c.current_order ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}">
-                                ${c.current_order ? 'На заказе' : 'Свободен'}
-                            </span>
+                            ${c.current_order ? `
+                                <div class="mt-2 p-3 bg-green-50 rounded-xl">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        <p class="text-sm font-medium text-green-700">Заказ #${c.current_order.id}</p>
+                                    </div>
+                                    <p class="text-xs text-green-600 truncate">${c.current_order.address || 'Адрес не указан'}</p>
+                                    <p class="text-xs text-green-500 mt-1">${(c.current_order.total_price || c.current_order.total || 0).toLocaleString()} ₸</p>
+                                </div>
+                            ` : ''}
+                            ${c.location ? `<p class="text-xs text-warm-500 mt-2">📍 Показать на карте</p>` : ''}
                         </div>
                     `).join('');
                 } else {
@@ -1450,6 +1469,7 @@
                 
                 document.getElementById('couriers-list').innerHTML = html;
             } catch (error) {
+                console.error('Error loading couriers:', error);
                 document.getElementById('couriers-list').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки</p>';
             }
         }
@@ -1536,7 +1556,182 @@
                 couriersMap.fitBounds(group.getBounds().pad(0.1));
             }
         }
+        
+        let chatUsers = [];
+        
+        async function loadChatUsers() {
+            try {
+                const response = await fetch('/api/admin/chat/users');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        document.getElementById('chat-users').innerHTML = '<p class="text-gray-500 text-center py-8">Требуется авторизация. <a href="/login" class="text-warm-500 hover:underline">Войти</a></p>';
+                        return;
+                    }
+                    document.getElementById('chat-users').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка сервера (' + response.status + ')</p>';
+                    return;
+                }
+                
+                const text = await response.text();
+                let users;
+                try {
+                    users = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('JSON parse error:', text.substring(0, 200));
+                    document.getElementById('chat-users').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка формата данных</p>';
+                    return;
+                }
+                
+                chatUsers = users;
+                renderChatUsers(users);
+            } catch (error) {
+                console.error('Chat users error:', error);
+                document.getElementById('chat-users').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки: ' + error.message + '</p>';
+            }
+        }
 
+        function renderChatUsers(users) {
+            const container = document.getElementById('chat-users');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет чатов</p>';
+                return;
+            }
+            
+            container.innerHTML = users.map(u => `
+                <div onclick="openChatModal(${u.id})" 
+                     class="bg-white rounded-2xl p-4 card-shadow flex items-center justify-between cursor-pointer hover:shadow-lg transition-shadow">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
+                            ${(u.name || 'U')[0]}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">${u.name || 'Гость'}</p>
+                            <p class="text-sm text-gray-500 truncate max-w-xs">${u.last_message || 'Нет сообщений'}</p>
+                        </div>
+                    </div>
+                    ${u.unread_count ? `<span class="px-2 py-1 bg-warm-500 text-white text-xs rounded-full">${u.unread_count}</span>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        let currentChatUserId = null;
+        
+        async function openChatModal(userId) {
+            currentChatUserId = userId;
+            const user = chatUsers.find(u => u.id === userId);
+            
+            const modal = document.createElement('div');
+            modal.id = 'chatModal';
+            modal.className = 'fixed inset-0 z-50 flex items-end md:items-center justify-center';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/30" onclick="closeChatModal()"></div>
+                <div class="relative bg-white w-full md:max-w-md md:rounded-2xl h-[80vh] md:h-[70vh] flex flex-col">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-medium">
+                                ${(user?.name || 'U')[0]}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">${user?.name || 'Гость'}</h3>
+                                <p class="text-xs text-gray-500">${user?.phone || ''}</p>
+                            </div>
+                        </div>
+                        <button onclick="closeChatModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <p class="text-gray-500 text-center py-4">Загрузка...</p>
+                    </div>
+                    <form id="chatForm" class="p-4 border-t border-gray-100 flex gap-2">
+                        <input type="text" id="chatInput" placeholder="Введите сообщение..." 
+                               class="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-warm-300 focus:ring-2 focus:ring-warm-100 outline-none">
+                        <button type="submit" class="btn-primary text-white px-4 py-3 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Загружаем сообщения
+            await loadChatMessages(userId);
+            
+            // Обработчик отправки
+            document.getElementById('chatForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await sendChatMessage(userId);
+            });
+        }
+        
+        async function loadChatMessages(userId) {
+            try {
+                const response = await fetch(`/api/admin/chat/messages/${userId}`);
+                const messages = await response.json();
+                renderChatMessages(messages);
+                
+                // Помечаем сообщения прочитанными
+                await fetch(`/api/admin/chat/mark-read/${userId}`, { method: 'POST' });
+                
+                // Обновляем список чатов, чтобы убрать счётчик
+                loadChatUsers();
+            } catch (error) {
+                document.getElementById('chatMessages').innerHTML = '<p class="text-gray-500 text-center py-4">Ошибка загрузки</p>';
+            }
+        }
+        
+        function renderChatMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Нет сообщений</p>';
+                return;
+            }
+            
+            container.innerHTML = messages.map(m => `
+                <div class="flex ${m.sender_role === 'admin' ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[80%] ${m.sender_role === 'admin' ? 'bg-warm-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-2xl px-4 py-2">
+                        <p class="text-sm">${m.message}</p>
+                        <p class="text-xs ${m.sender_role === 'admin' ? 'text-warm-100' : 'text-gray-400'} mt-1">${formatDate(m.created_at)}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        async function sendChatMessage(userId) {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            try {
+                const response = await fetch('/api/admin/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, message })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    await loadChatMessages(userId);
+                } else {
+                    showToast('Ошибка отправки');
+                }
+            } catch (error) {
+                showToast('Ошибка соединения');
+            }
+        }
+        
+        function closeChatModal() {
+            const modal = document.getElementById('chatModal');
+            if (modal) modal.remove();
+        }
+        
         async function changeOrderStatus(orderId, newStatus) {
             try {
                 const response = await fetch(`/api/admin/orders/${orderId}/status`, {
@@ -1665,6 +1860,179 @@
 
         function logout() {
             fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
+        }
+
+// Import CSV Modal
+        function openImportModal() {
+            const modal = document.createElement('div');
+            modal.id = 'importModal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/30" onclick="closeImportModal()"></div>
+                <div class="relative bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white p-4 border-b border-gray-100 flex justify-between items-center z-10">
+                        <h3 class="text-lg font-bold text-gray-900">Импорт товаров из CSV</h3>
+                        <button onclick="closeImportModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div class="bg-blue-50 rounded-xl p-4 text-sm text-blue-700">
+                            <p class="font-medium mb-2">Формат CSV файла:</p>
+                            <code class="block bg-white p-2 rounded text-xs">
+                                name,price,category_id,is_weighted<br>
+                                Яблоки,500,1,1<br>
+                                Молоко,350,2,0
+                            </code>
+                            <p class="mt-2 text-xs text-blue-600">
+                                * Первая строка - заголовки (обязательно)<br>
+                                * is_weighted: 1 - весовой, 0 - штучный<br>
+                                * category_id - ID категории из базы
+                            </p>
+                        </div>
+                        
+                        <form id="importForm" class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+                                <input type="file" id="importFile" accept=".csv" class="hidden" onchange="handleImportFile(this)">
+                                <label for="importFile" class="cursor-pointer">
+                                    <svg class="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                    </svg>
+                                    <p class="text-sm text-gray-500">Нажмите для выбора CSV файла</p>
+                                    <p id="importFileName" class="text-sm text-warm-500 font-medium mt-2"></p>
+                                </label>
+                            </div>
+                            
+                            <div id="importPreview" class="hidden">
+                                <h4 class="font-medium text-gray-900 mb-2">Предпросмотр товаров:</h4>
+                                <div id="importPreviewList" class="max-h-48 overflow-y-auto bg-gray-50 rounded-xl p-3 text-sm"></div>
+                                <p id="importCount" class="text-sm text-gray-500 mt-2"></p>
+                            </div>
+                            
+                            <div class="flex gap-3">
+                                <button type="button" onclick="closeImportModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
+                                    Отмена
+                                </button>
+                                <button type="submit" id="importSubmitBtn" disabled class="flex-1 btn-primary text-white py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Импортировать
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('importForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await importProducts();
+            });
+        }
+        
+        function closeImportModal() {
+            const modal = document.getElementById('importModal');
+            if (modal) modal.remove();
+        }
+        
+        let importData = [];
+        
+        function handleImportFile(input) {
+            importData = [];
+            const file = input.files[0];
+            if (!file) return;
+            
+            document.getElementById('importFileName').textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    showToast('Файл должен содержать заголовок и хотя бы одну строку данных');
+                    return;
+                }
+                
+                const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const nameIndex = header.indexOf('name');
+                const priceIndex = header.indexOf('price');
+                const categoryIndex = header.indexOf('category_id');
+                const weightedIndex = header.indexOf('is_weighted');
+                
+                if (nameIndex === -1 || priceIndex === -1 || categoryIndex === -1) {
+                    showToast('CSV должен содержать колонки: name, price, category_id');
+                    return;
+                }
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    if (values.length >= 3) {
+                        importData.push({
+                            name: values[nameIndex],
+                            price: parseFloat(values[priceIndex]) || 0,
+                            category_id: parseInt(values[categoryIndex]) || 0,
+                            is_weighted: weightedIndex !== -1 ? (parseInt(values[weightedIndex]) || 0) : 0
+                        });
+                    }
+                }
+                
+                if (importData.length === 0) {
+                    showToast('Не удалось распознать товары в файле');
+                    return;
+                }
+                
+                // Показываем предпросмотр
+                const preview = document.getElementById('importPreview');
+                const previewList = document.getElementById('importPreviewList');
+                preview.classList.remove('hidden');
+                
+                previewList.innerHTML = importData.slice(0, 10).map((item, i) => `
+                    <div class="flex justify-between py-1 border-b border-gray-200 last:border-0">
+                        <span class="text-gray-700">${item.name}</span>
+                        <span class="text-gray-500">${item.price} ₸</span>
+                    </div>
+                `).join('') + (importData.length > 10 ? `<p class="text-center text-gray-400 pt-2">...и ещё ${importData.length - 10} товаров</p>` : '');
+                
+                document.getElementById('importCount').textContent = `Найдено товаров: ${importData.length}`;
+                document.getElementById('importSubmitBtn').disabled = false;
+            };
+            reader.readAsText(file);
+        }
+        
+        async function importProducts() {
+            if (importData.length === 0) {
+                showToast('Нет данных для импорта');
+                return;
+            }
+            
+            const btn = document.getElementById('importSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Импорт...';
+            
+            try {
+                const response = await fetch('/api/admin/products/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ products: importData })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`Импортировано ${data.imported} товаров`);
+                    closeImportModal();
+                    loadProducts();
+                } else {
+                    showToast(data.error || 'Ошибка импорта');
+                    btn.disabled = false;
+                    btn.textContent = 'Импортировать';
+                }
+            } catch (error) {
+                showToast('Ошибка соединения');
+                btn.disabled = false;
+                btn.textContent = 'Импортировать';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

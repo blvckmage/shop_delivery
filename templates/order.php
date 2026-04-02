@@ -199,10 +199,21 @@
                     <form id="orderForm" class="space-y-4">
                         <div>
                             <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Адрес доставки</label>
-                            <textarea id="address" name="address" required
-                                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all resize-none"
-                                      rows="2"
-                                      placeholder="Улица и номер дома..."></textarea>
+                            <div class="relative">
+                                <textarea id="address" name="address" required
+                                          class="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all resize-none"
+                                          rows="2"
+                                          placeholder="Улица и номер дома..."></textarea>
+                                <button type="button" onclick="detectLocation()" 
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-warm-500 transition-colors"
+                                        title="Определить моё местоположение">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Нажмите на иконку справа для автоматического определения адреса</p>
                         </div>
                         
                         <div>
@@ -351,7 +362,35 @@
                     body: JSON.stringify(data)
                 });
 
+                // Проверяем, что ответ в формате JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Server returned non-JSON response:', text.substring(0, 500));
+                    showToast('Ошибка сервера. Попробуйте позже.', 'error');
+                    return;
+                }
+
                 const result = await response.json();
+
+                if (!response.ok) {
+                    // Если есть активный заказ - показываем кнопку перехода
+                    if (result.active_order) {
+                        const orderId = result.active_order.id;
+                        showToast('У вас уже есть активный заказ #' + orderId, 'error');
+                        setTimeout(() => {
+                            if (confirm('Перейти к вашим заказам?')) {
+                                window.location.href = '/orders';
+                            }
+                        }, 1500);
+                    } else if (result.redirect) {
+                        showToast(result.error || 'Ошибка оформления заказа', 'error');
+                        setTimeout(() => window.location.href = result.redirect, 2000);
+                    } else {
+                        showToast(result.error || 'Ошибка оформления заказа', 'error');
+                    }
+                    return;
+                }
 
                 if (result.success) {
                     showToast('Заказ #' + result.order_id + ' успешно оформлен!', 'success');
@@ -361,7 +400,8 @@
                     showToast(result.error || 'Ошибка оформления заказа', 'error');
                 }
             } catch (error) {
-                showToast('Ошибка сети', 'error');
+                console.error('Order error:', error);
+                showToast('Ошибка: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
                 btnText.textContent = 'Подтвердить заказ';
@@ -436,6 +476,62 @@
                 console.error('Geocode error:', error);
                 showToast('Ошибка при определении адреса', 'error');
             }
+        }
+
+        // Определение местоположения пользователя
+        async function detectLocation() {
+            const addressInput = document.getElementById('address');
+            const originalValue = addressInput.value;
+            
+            // Показываем загрузку
+            addressInput.value = 'Определяем местоположение...';
+            addressInput.disabled = true;
+            
+            if (!navigator.geolocation) {
+                addressInput.value = originalValue;
+                addressInput.disabled = false;
+                showToast('Геолокация не поддерживается браузером', 'error');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Обновляем маркер на карте
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([lat, lng]).addTo(map);
+                    map.setView([lat, lng], 16);
+                    
+                    // Получаем адрес
+                    await reverseGeocode(lat, lng);
+                    addressInput.disabled = false;
+                },
+                (error) => {
+                    addressInput.value = originalValue;
+                    addressInput.disabled = false;
+                    
+                    let message = 'Ошибка определения местоположения';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = 'Доступ к геолокации запрещён. Разрешите в настройках браузера.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = 'Местоположение недоступно';
+                            break;
+                        case error.TIMEOUT:
+                            message = 'Превышено время ожидания';
+                            break;
+                    }
+                    showToast(message, 'error');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
         }
 
         // Sync cart

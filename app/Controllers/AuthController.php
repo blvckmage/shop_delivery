@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Security;
 use App\Core\Validator;
+use App\Core\RateLimiter;
 use App\Models\UserModel;
 
 /**
@@ -50,6 +51,12 @@ class AuthController extends Controller
      */
     public function login(Request $request): Response
     {
+        // Проверка rate limiting
+        if (RateLimiter::tooManyAttempts('login')) {
+            $seconds = RateLimiter::availableIn('login');
+            return $this->error("Слишком много попыток. Попробуйте через {$seconds} секунд", 429);
+        }
+        
         $data = $request->json();
         
         // Валидация - принимаем phone или email
@@ -57,6 +64,7 @@ class AuthController extends Controller
         $password = $data['password'] ?? null;
         
         if (empty($login) || empty($password)) {
+            RateLimiter::attempt('login');
             return $this->error('Введите телефон и пароль', 400);
         }
         
@@ -66,11 +74,13 @@ class AuthController extends Controller
         $user = $this->userModel->findByLogin($login);
         
         if ($user === null) {
+            RateLimiter::attempt('login');
             return $this->error('Неверный логин или пароль', 401);
         }
         
         // Проверка пароля
         if (!$this->userModel->verifyPassword($user, $password)) {
+            RateLimiter::attempt('login');
             return $this->error('Неверный логин или пароль', 401);
         }
         
@@ -101,6 +111,14 @@ class AuthController extends Controller
      */
     public function register(Request $request): Response
     {
+        // Проверка rate limiting
+        if (RateLimiter::tooManyAttempts('register')) {
+            $seconds = RateLimiter::availableIn('register');
+            return $this->error("Слишком много попыток регистрации. Попробуйте через " . round($seconds / 60) . " минут", 429);
+        }
+        
+        RateLimiter::attempt('register');
+        
         $data = $request->json();
         
         // Валидация
@@ -138,9 +156,19 @@ class AuthController extends Controller
             'role' => 'user'
         ]);
         
+        // Автоматический вход после регистрации
+        $user = $this->userModel->findById($userId);
+        if ($user) {
+            unset($user['password']);
+            $this->session->setUser($user);
+            $this->session->regenerate();
+        }
+        
         return $this->json([
             'success' => true,
-            'user_id' => $userId
+            'user_id' => $userId,
+            'user' => $user ?? null,
+            'redirect' => '/profile'
         ]);
     }
     

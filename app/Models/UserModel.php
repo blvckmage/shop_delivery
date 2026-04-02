@@ -71,10 +71,9 @@ class UserModel
         $user = [
             'name' => Security::sanitize($data['name']),
             'phone' => Security::normalizePhone($data['phone']),
-            'email' => isset($data['email']) ? Security::sanitize($data['email']) : null,
+            'email' => !empty($data['email']) ? Security::sanitize($data['email']) : null,
             'password' => Security::hashPassword($data['password']),
-            'role' => $data['role'] ?? 'user',
-            'created_at' => date('c')
+            'role' => $data['role'] ?? 'user'
         ];
         
         return $this->db->insert($this->table, $user);
@@ -92,7 +91,7 @@ class UserModel
         }
         
         if (isset($data['email'])) {
-            $updates['email'] = Security::sanitize($data['email']);
+            $updates['email'] = !empty($data['email']) ? Security::sanitize($data['email']) : null;
         }
         
         if (isset($data['phone'])) {
@@ -105,6 +104,21 @@ class UserModel
         
         if (isset($data['password'])) {
             $updates['password'] = Security::hashPassword($data['password']);
+        }
+        
+        // WhatsApp уведомления
+        if (isset($data['whatsapp_notifications'])) {
+            $updates['whatsapp_notifications'] = (int) $data['whatsapp_notifications'];
+        }
+        
+        if (isset($data['whatsapp_phone'])) {
+            $updates['whatsapp_phone'] = !empty($data['whatsapp_phone']) 
+                ? Security::normalizePhone($data['whatsapp_phone']) 
+                : null;
+        }
+        
+        if (empty($updates)) {
+            return false;
         }
         
         return $this->db->update($this->table, $id, $updates);
@@ -132,13 +146,14 @@ class UserModel
     public function phoneExists(string $phone, ?int $excludeId = null): bool
     {
         $phone = Security::normalizePhone($phone);
-        $users = $this->db->findBy($this->table, 'phone', $phone);
         
         if ($excludeId !== null) {
-            $users = array_filter($users, fn($u) => $u['id'] != $excludeId);
+            $count = $this->db->count($this->table, 'phone = ? AND id != ?', [$phone, $excludeId]);
+        } else {
+            $count = $this->db->count($this->table, 'phone = ?', [$phone]);
         }
         
-        return !empty($users);
+        return $count > 0;
     }
     
     /**
@@ -146,13 +161,13 @@ class UserModel
      */
     public function emailExists(string $email, ?int $excludeId = null): bool
     {
-        $users = $this->db->findBy($this->table, 'email', $email);
-        
         if ($excludeId !== null) {
-            $users = array_filter($users, fn($u) => $u['id'] != $excludeId);
+            $count = $this->db->count($this->table, 'email = ? AND id != ?', [$email, $excludeId]);
+        } else {
+            $count = $this->db->count($this->table, 'email = ?', [$email]);
         }
         
-        return !empty($users);
+        return $count > 0;
     }
     
     /**
@@ -185,6 +200,18 @@ class UserModel
     public function getAdmins(): array
     {
         return $this->getByRole('admin');
+    }
+    
+    /**
+     * Получить пользователей с включенными WhatsApp уведомлениями
+     */
+    public function getWhatsAppSubscribers(): array
+    {
+        $sql = "SELECT id, name, phone, whatsapp_phone, role FROM {$this->table} 
+                WHERE whatsapp_notifications = 1 
+                AND (whatsapp_phone IS NOT NULL OR phone IS NOT NULL)";
+        
+        return $this->db->query($sql);
     }
     
     /**

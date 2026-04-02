@@ -1,6 +1,3 @@
-# Cache files
-cache_*
-
 # Environment variables
 .env
 
@@ -25,16 +22,20 @@ Thumbs.db
 # PHP error logs
 error_log
 
-# Uploads directory (contains user uploads)
-public/uploads/
-
 # IDE files
 .vscode/
 .idea/
 *.sublime-*
 
-# Node modules (if any)
-node_modules/
-
-# Composer vendor (if any)
+# Vendor (regenerate with composer install)
 vendor/
+
+# Cache files
+cache_*
+
+# Uploaded files (keep structure)
+uploads/products/*
+!uploads/products/.gitkeep
+
+# Composer lock in development
+# composer.lock

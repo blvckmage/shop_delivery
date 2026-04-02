@@ -8,7 +8,41 @@
 
 // Отображение ошибок (выключить в production)
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Глобальный обработчик ошибок для API
+set_error_handler(function($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+set_exception_handler(function($exception) {
+    error_log("Uncaught exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+    
+    // Проверяем, является ли запрос API
+    $isApi = strpos($_SERVER['REQUEST_URI'] ?? '/', '/api/') === 0;
+    
+    if ($isApi) {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Внутренняя ошибка сервера',
+            'debug' => [
+                'message' => $exception->getMessage(),
+                'file' => basename($exception->getFile()),
+                'line' => $exception->getLine()
+            ]
+        ]);
+    } else {
+        http_response_code(500);
+        echo "<h1>Ошибка сервера</h1><p>Попробуйте позже</p>";
+    }
+    exit;
+});
 
 // Временная функция автозагрузки (пока не запущен composer install)
 spl_autoload_register(function ($class) {
@@ -55,6 +89,29 @@ $request = new Request();
 // Создаем маршрутизатор
 $router = new Router();
 
+// ==================== PWA Файлы ====================
+
+// PWA файлы (для работы с PHP встроенным сервером)
+$router->get('/manifest.json', function($request) {
+    $file = __DIR__ . '/public/manifest.json';
+    if (file_exists($file)) {
+        header('Content-Type: application/json');
+        readfile($file);
+        exit;
+    }
+    return (new Response())->error('Not Found', 404);
+});
+
+$router->get('/sw.js', function($request) {
+    $file = __DIR__ . '/public/sw.js';
+    if (file_exists($file)) {
+        header('Content-Type: application/javascript');
+        readfile($file);
+        exit;
+    }
+    return (new Response())->error('Not Found', 404);
+});
+
 // ==================== МАРШРУТЫ ====================
 
 // Главная страница
@@ -87,9 +144,6 @@ $router->get('/admin', [App\Controllers\AdminController::class, 'dashboard']);
 
 // Курьер
 $router->get('/courier', [App\Controllers\ApiController::class, 'courierPage']);
-
-// Сборщик
-$router->get('/picker', [App\Controllers\ApiController::class, 'pickerPage']);
 
 // ==================== API: АВТОРИЗАЦИЯ ====================
 
@@ -138,6 +192,11 @@ $router->put('/api/profile/update', [App\Controllers\SiteController::class, 'upd
 
 // ==================== API: КУРЬЕР ====================
 
+// Смена курьера
+$router->get('/api/courier/shift', [App\Controllers\ApiController::class, 'getShiftStatus']);
+$router->post('/api/courier/shift/start', [App\Controllers\ApiController::class, 'startShift']);
+$router->post('/api/courier/shift/end', [App\Controllers\ApiController::class, 'endShift']);
+
 $router->get('/api/courier/orders', [App\Controllers\ApiController::class, 'courierOrders']);
 $router->get('/api/courier/history', [App\Controllers\ApiController::class, 'courierHistory']);
 $router->post('/api/courier/take/{id}', [App\Controllers\ApiController::class, 'courierTakeOrder']);
@@ -155,6 +214,7 @@ $router->get('/api/orders/{id}/courier-location', [App\Controllers\ApiController
 $router->get('/api/admin/products', [App\Controllers\AdminController::class, 'getProducts']);
 $router->post('/api/admin/products', [App\Controllers\AdminController::class, 'createProduct']);
 $router->post('/api/admin/products/upload-image', [App\Controllers\AdminController::class, 'uploadProductImage']);
+$router->post('/api/admin/products/import', [App\Controllers\AdminController::class, 'importProducts']);
 $router->put('/api/admin/products/{id}', [App\Controllers\AdminController::class, 'updateProduct']);
 $router->delete('/api/admin/products/{id}', [App\Controllers\AdminController::class, 'deleteProduct']);
 
@@ -202,6 +262,7 @@ $router->get('/api/chat/contacts', [App\Controllers\ApiController::class, 'chatC
 $router->get('/api/chat/messages', [App\Controllers\ApiController::class, 'chatMessages']);
 $router->get('/api/chat/messages/{contactId}', [App\Controllers\ApiController::class, 'chatMessages']);
 $router->post('/api/chat/messages', [App\Controllers\ApiController::class, 'chatSend']);
+$router->post('/api/chat/mark-read', [App\Controllers\ApiController::class, 'chatMarkRead']);
 $router->post('/api/chat/send', [App\Controllers\ApiController::class, 'chatSend']);
 $router->post('/api/chat/send/{contactId}', [App\Controllers\ApiController::class, 'chatSend']);
 
@@ -210,6 +271,12 @@ $router->get('/api/admin/chat/users', [App\Controllers\ApiController::class, 'ad
 $router->get('/api/admin/chat/messages/{userId}', [App\Controllers\ApiController::class, 'adminChatMessages']);
 $router->post('/api/admin/chat/messages', [App\Controllers\ApiController::class, 'adminChatSend']);
 $router->post('/api/admin/chat/send', [App\Controllers\ApiController::class, 'adminChatSend']);
+$router->post('/api/admin/chat/mark-read/{userId}', [App\Controllers\ApiController::class, 'adminChatMarkRead']);
+
+// Курьер: чат
+$router->get('/api/courier/chat/contacts', [App\Controllers\ApiController::class, 'courierChatContacts']);
+$router->get('/api/courier/chat/messages/{adminId}', [App\Controllers\ApiController::class, 'courierChatMessages']);
+$router->post('/api/courier/chat/send/{adminId}', [App\Controllers\ApiController::class, 'courierChatSend']);
 
 // ==================== API: УВЕДОМЛЕНИЯ ====================
 
@@ -218,12 +285,26 @@ $router->get('/api/notifications/unread-count', [App\Controllers\ApiController::
 $router->post('/api/notifications/{id}/read', [App\Controllers\ApiController::class, 'markNotificationRead']);
 $router->post('/api/notifications/read-all', [App\Controllers\ApiController::class, 'markAllNotificationsRead']);
 
-// ==================== API: СБОРЩИК ====================
-
-$router->get('/api/picker/orders', [App\Controllers\ApiController::class, 'pickerOrders']);
-$router->post('/api/picker/assemble/{id}', [App\Controllers\ApiController::class, 'pickerAssembleOrder']);
-
 // ==================== ДИСПЕТЧЕРИЗАЦИЯ ====================
+
+// Обработка PWA файлов напрямую (для PHP встроенного сервера)
+$path = $request->getPath();
+if ($path === '/manifest.json') {
+    $file = __DIR__ . '/public/manifest.json';
+    if (file_exists($file)) {
+        header('Content-Type: application/json');
+        readfile($file);
+        exit;
+    }
+}
+if ($path === '/sw.js') {
+    $file = __DIR__ . '/public/sw.js';
+    if (file_exists($file)) {
+        header('Content-Type: application/javascript');
+        readfile($file);
+        exit;
+    }
+}
 
 $response = $router->dispatch($request);
 $response->send();

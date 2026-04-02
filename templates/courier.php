@@ -73,9 +73,9 @@
         #map { z-index: 1; }
     </style>
 </head>
-<body class="gradient-hero min-h-screen pb-20 md:pb-0">
+<body class="gradient-hero min-h-screen pb-20 md:pb-0 md:pl-64">
     <!-- Header -->
-    <header class="glass sticky top-0 z-50 border-b border-warm-100">
+    <header class="glass sticky top-0 z-50 border-b border-warm-100 md:hidden">
         <div class="container mx-auto px-4">
             <nav class="flex justify-between items-center h-16">
                 <a href="/" class="flex items-center space-x-2">
@@ -110,6 +110,32 @@
         <div class="container mx-auto max-w-2xl">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">Панель курьера</h1>
             
+            <!-- Shift Status -->
+            <div id="shift-section" class="mb-6">
+                <div id="shift-off" class="bg-white rounded-2xl p-4 card-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Вы не на смене</p>
+                            <p class="text-gray-900 font-medium">Нажмите, чтобы начать работу</p>
+                        </div>
+                        <button onclick="startShift()" class="px-6 py-3 btn-primary text-white rounded-xl font-medium text-sm">
+                            Заступить
+                        </button>
+                    </div>
+                </div>
+                <div id="shift-on" class="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-4 shadow-lg hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="text-white">
+                            <p class="text-green-100 text-sm">Вы на смене</p>
+                            <p id="shift-time" class="font-medium">Начало: --:--</p>
+                        </div>
+                        <button onclick="endShift()" class="px-6 py-3 bg-white text-green-600 rounded-xl font-medium text-sm hover:bg-green-50 transition-colors">
+                            Закончить смену
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Map Section -->
             <div id="map-section" class="mb-6 hidden">
                 <div class="bg-white rounded-2xl card-shadow overflow-hidden">
@@ -142,13 +168,13 @@
             
             <!-- Tabs -->
             <div class="flex space-x-2 mb-4">
-                <button onclick="showTab('available')" id="tab-available" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-warm-500 text-white">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); showTab('available');" id="tab-available" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-warm-500 text-white cursor-pointer">
                     Доступные
                 </button>
-                <button onclick="showTab('current')" id="tab-current" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); showTab('current');" id="tab-current" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow cursor-pointer">
                     Мои
                 </button>
-                <button onclick="showTab('history')" id="tab-history" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); showTab('history');" id="tab-history" class="flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow cursor-pointer">
                     История
                 </button>
             </div>
@@ -186,37 +212,80 @@
         </div>
     </div>
 
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex flex-col w-64 min-h-screen bg-white border-r border-gray-100 fixed left-0 top-0">
+        <div class="p-4 border-b border-gray-100">
+            <a href="/" class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-gray-800">Delivery</span>
+            </a>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="navigateTo('/courier')" id="desktop-nav-orders" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-warm-500 to-warm-600 text-white">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                </svg>
+                <span class="font-medium">Заказы</span>
+            </button>
+            
+            <button onclick="navigateTo('/chat')" id="desktop-nav-chat" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-warm-50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span class="font-medium">Чат</span>
+            </button>
+            
+            <button onclick="navigateTo('/profile')" id="desktop-nav-profile" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-warm-50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="font-medium">Профиль</span>
+            </button>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-100">
+            <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span class="font-medium">Выйти</span>
+            </button>
+        </div>
+    </aside>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-40">
         <div class="flex justify-around items-center h-16">
-            <a href="/" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span class="text-xs mt-1">Главная</span>
-            </a>
-            <a href="/courier" class="flex flex-col items-center justify-center text-warm-500">
+            <button onclick="navigateTo('/courier')" id="nav-orders" class="flex flex-col items-center justify-center text-warm-500">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
                 </svg>
                 <span class="text-xs mt-1 font-medium">Заказы</span>
-            </a>
-            <a href="/chat" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            </button>
+            <button onclick="navigateTo('/chat')" id="nav-chat" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                 </svg>
                 <span class="text-xs mt-1">Чат</span>
-            </a>
-            <a href="/profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+            </button>
+            <button onclick="navigateTo('/profile')" id="nav-profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
                 <span class="text-xs mt-1">Профиль</span>
-            </a>
+            </button>
         </div>
     </nav>
 
     <script>
+        // Shift status
+        let isOnShift = false;
+        
         // Map variables
         let map = null;
         let marker = null;
@@ -330,15 +399,18 @@
         }
 
         function showTab(tab) {
+            console.log('showTab called with:', tab);
             ['available', 'current', 'history'].forEach(t => {
                 const tabBtn = document.getElementById(`tab-${t}`);
                 const content = document.getElementById(`orders-${t}`);
-                if (t === tab) {
-                    tabBtn.className = 'flex-1 py-3 rounded-xl font-medium transition-colors bg-warm-500 text-white';
-                    content.classList.remove('hidden');
-                } else {
-                    tabBtn.className = 'flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow';
-                    content.classList.add('hidden');
+                if (tabBtn && content) {
+                    if (t === tab) {
+                        tabBtn.className = 'flex-1 py-3 rounded-xl font-medium transition-colors bg-warm-500 text-white';
+                        content.classList.remove('hidden');
+                    } else {
+                        tabBtn.className = 'flex-1 py-3 rounded-xl font-medium transition-colors bg-white text-gray-600 card-shadow';
+                        content.classList.add('hidden');
+                    }
                 }
             });
             
@@ -568,10 +640,159 @@
             fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
         }
 
+        function navigateTo(path) {
+            window.location.href = path;
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            loadOrders();
-            startLocationTracking();
+            loadShiftStatus();
         });
+        
+        // ==================== СМЕНА КУРЬЕРА ====================
+        
+        async function loadShiftStatus() {
+            try {
+                const response = await fetch('/api/courier/shift');
+                const data = await response.json();
+                
+                isOnShift = data.is_on_shift;
+                updateShiftUI();
+                
+                // Всегда загружаем историю заказов
+                loadHistory();
+                
+                if (isOnShift) {
+                    // Если на смене - загружаем заказы и запускаем отслеживание
+                    loadOrders();
+                    startLocationTracking();
+                    startNotificationsPolling();
+                    
+                    // Показываем время начала смены
+                    if (data.shift && data.shift.started_at) {
+                        const startTime = new Date(data.shift.started_at);
+                        document.getElementById('shift-time').textContent = 
+                            'Начало: ' + startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    }
+                } else {
+                    // Если не на смене - показываем сообщение о доступных заказах
+                    document.getElementById('orders-available').innerHTML = 
+                        '<div class="text-center py-8"><p class="text-gray-500">Заступите на смену, чтобы видеть доступные заказы</p></div>';
+                    document.getElementById('orders-current').innerHTML = 
+                        '<div class="text-center py-8"><p class="text-gray-500">Нет активных заказов</p></div>';
+                    document.getElementById('loading').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статуса смены:', error);
+            }
+        }
+        
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/courier/history');
+                const history = await response.json();
+                renderOrders('orders-history', history || [], 'history');
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+        
+        function updateShiftUI() {
+            const shiftOff = document.getElementById('shift-off');
+            const shiftOn = document.getElementById('shift-on');
+            
+            if (isOnShift) {
+                shiftOff.classList.add('hidden');
+                shiftOn.classList.remove('hidden');
+            } else {
+                shiftOff.classList.remove('hidden');
+                shiftOn.classList.add('hidden');
+            }
+        }
+        
+        async function startShift() {
+            try {
+                // Сначала запрашиваем разрешение на геолокацию
+                if (navigator.geolocation) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(
+                                (position) => resolve(position),
+                                (error) => {
+                                    console.log('Геолокация отклонена или недоступна:', error.message);
+                                    resolve(null); // Продолжаем даже если геолокация недоступна
+                                },
+                                { enableHighAccuracy: true, timeout: 5000 }
+                            );
+                        });
+                    } catch (geoError) {
+                        console.log('Ошибка геолокации:', geoError);
+                    }
+                }
+                
+                const response = await fetch('/api/courier/shift/start', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    isOnShift = true;
+                    updateShiftUI();
+                    
+                    // Показываем текущее время
+                    const now = new Date();
+                    document.getElementById('shift-time').textContent = 
+                        'Начало: ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Запускаем отслеживание и загрузку заказов
+                    loadOrders();
+                    startLocationTracking();
+                    startNotificationsPolling();
+                    
+                    showToast('Смена начата! Вы можете принимать заказы.');
+                } else {
+                    showToast(data.error || 'Ошибка при начале смены');
+                }
+            } catch (error) {
+                console.error('Ошибка начала смены:', error);
+                showToast('Ошибка соединения');
+            }
+        }
+        
+        async function endShift() {
+            if (!confirm('Вы уверены, что хотите закончить смену?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/courier/shift/end', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    isOnShift = false;
+                    updateShiftUI();
+                    
+                    // Останавливаем отслеживание
+                    stopLocationTracking();
+                    stopNotificationsPolling();
+                    
+                    // Очищаем только доступные и текущие заказы, историю оставляем
+                    document.getElementById('orders-available').innerHTML = 
+                        '<div class="text-center py-8"><p class="text-gray-500">Заступите на смену, чтобы видеть заказы</p></div>';
+                    document.getElementById('orders-current').innerHTML = 
+                        '<div class="text-center py-8"><p class="text-gray-500">Нет активных заказов</p></div>';
+                    document.getElementById('available-count').textContent = '0';
+                    document.getElementById('current-count').textContent = '0';
+                    
+                    // Перезагружаем историю
+                    loadHistory();
+                    
+                    showToast('Смена закончена. До встречи!');
+                } else {
+                    showToast(data.error || 'Ошибка при завершении смены');
+                }
+            } catch (error) {
+                console.error('Ошибка завершения смены:', error);
+                showToast('Ошибка соединения');
+            }
+        }
         
         // ==================== ГЕОЛОКАЦИЯ ====================
         
@@ -606,6 +827,9 @@
         }
         
         async function sendLocation(lat, lng) {
+            // Отправляем только если на смене
+            if (!isOnShift) return;
+            
             try {
                 await fetch('/api/courier/location', {
                     method: 'POST',
@@ -618,8 +842,46 @@
             }
         }
         
+        // ==================== УВЕДОМЛЕНИЯ ====================
+        
+        let notificationsInterval = null;
+        
+        function startNotificationsPolling() {
+            // Проверяем уведомления каждые 30 секунд
+            notificationsInterval = setInterval(checkUnreadNotifications, 30000);
+            checkUnreadNotifications(); // Сразу проверяем
+        }
+        
+        function stopNotificationsPolling() {
+            if (notificationsInterval !== null) {
+                clearInterval(notificationsInterval);
+                notificationsInterval = null;
+            }
+        }
+        
+        async function checkUnreadNotifications() {
+            if (!isOnShift) return;
+            
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                const data = await response.json();
+                
+                const badge = document.getElementById('notification-badge');
+                if (data.count > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Ошибка проверки уведомлений:', error);
+            }
+        }
+        
         // Останавливаем отслеживание при уходе со страницы
-        window.addEventListener('beforeunload', stopLocationTracking);
+        window.addEventListener('beforeunload', function() {
+            stopLocationTracking();
+            stopNotificationsPolling();
+        });
     </script>
 </body>
 </html>

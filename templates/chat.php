@@ -1,3 +1,9 @@
+<?php
+/**
+ * Шаблон чата
+ * Для пользователей и курьеров - чат со "Службой поддержки" (админом с телефоном 7771234567)
+ */
+?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -67,9 +73,9 @@
         }
     </style>
 </head>
-<body class="gradient-hero min-h-screen pb-20 md:pb-0">
+<body class="gradient-hero min-h-screen pb-20 md:pb-0 <?php echo ($user['role'] ?? 'user') === 'courier' ? 'md:pl-64' : ''; ?>">
     <!-- Header -->
-    <header class="glass sticky top-0 z-50 border-b border-warm-100">
+    <header class="glass sticky top-0 z-50 border-b border-warm-100 <?php echo ($user['role'] ?? 'user') === 'courier' ? 'md:hidden' : ''; ?>">
         <div class="container mx-auto px-4">
             <nav class="flex justify-between items-center h-16">
                 <a href="/" class="flex items-center space-x-2">
@@ -125,7 +131,7 @@
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
                             </svg>
                         </div>
                         <div>
@@ -158,16 +164,90 @@
             <div class="mt-4 bg-warm-50 rounded-xl p-4">
                 <h3 class="font-semibold text-warm-800 mb-2">📞 Контакты</h3>
                 <ul class="text-sm text-warm-700 space-y-1">
-                    <li>• Телефон: +7 (727) 123-45-67</li>
-                    <li>• Email: support@kazyna.kz</li>
+                    <li>• Телефон: +7 (777) 123-45-67</li>
+                    <li>• Email: support@delivery.kz</li>
                     <li>• Режим работы: Пн-Пт с 9:00 до 18:00</li>
                 </ul>
             </div>
         </div>
     </main>
 
+    <?php $isCourier = ($user['role'] ?? 'user') === 'courier'; ?>
+    
+    <!-- Desktop Sidebar for Courier -->
+    <?php if ($isCourier): ?>
+    <aside class="hidden md:flex flex-col w-64 min-h-screen bg-white border-r border-gray-100 fixed left-0 top-0">
+        <div class="p-4 border-b border-gray-100">
+            <a href="/" class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-gray-800">Delivery</span>
+            </a>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1">
+            <a href="/courier" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-warm-50 transition-colors">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                </svg>
+                <span class="font-medium">Заказы</span>
+            </a>
+            
+            <a href="/chat" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-warm-500 to-warm-600 text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span class="font-medium">Чат</span>
+            </a>
+            
+            <a href="/profile" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-warm-50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="font-medium">Профиль</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-100">
+            <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span class="font-medium">Выйти</span>
+            </button>
+        </div>
+    </aside>
+    <?php endif; ?>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 bottom-nav z-40">
+        <?php if ($isCourier): ?>
+        <!-- Courier Navigation -->
+        <div class="flex justify-around items-center h-16">
+            <a href="/courier" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                </svg>
+                <span class="text-xs mt-1">Заказы</span>
+            </a>
+            <a href="/chat" class="flex flex-col items-center justify-center text-warm-500">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span class="text-xs mt-1 font-medium">Чат</span>
+            </a>
+            <a href="/profile" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="text-xs mt-1">Профиль</span>
+            </a>
+        </div>
+        <?php else: ?>
+        <!-- Regular User Navigation -->
         <div class="flex justify-around items-center h-16">
             <a href="/" class="flex flex-col items-center justify-center text-gray-400 hover:text-warm-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,6 +281,7 @@
                 <span class="text-xs mt-1 font-medium">Чат</span>
             </a>
         </div>
+        <?php endif; ?>
     </nav>
 
     <script>
@@ -208,14 +289,20 @@
         let messageInput;
         let lastMessageId = 0;
         const currentUserId = <?php echo $_SESSION['user']['id'] ?? 'null'; ?>;
+        const userRole = '<?php echo $user['role'] ?? 'user'; ?>';
 
         document.addEventListener('DOMContentLoaded', function() {
             messagesContainer = document.getElementById('chat-messages');
             messageInput = document.getElementById('messageInput');
             
             updateCartCount();
+            
+            // Загружаем сообщения и помечаем их прочитанными
             loadMessages();
+            
+            // Поллинг новых сообщений
             setInterval(loadNewMessages, 3000);
+            
             messageInput.focus();
         });
 
@@ -248,6 +335,8 @@
                     displayMessages(messages);
                     if (messages.length > 0) {
                         lastMessageId = messages[messages.length - 1].id;
+                        // Помечаем сообщения прочитанными
+                        markMessagesAsRead();
                     }
                 }
             } catch (error) {
@@ -265,10 +354,20 @@
                         displayMessages(newMessages);
                         lastMessageId = newMessages[newMessages.length - 1].id;
                         scrollToBottom();
+                        // Помечаем новые сообщения прочитанными
+                        markMessagesAsRead();
                     }
                 }
             } catch (error) {
                 console.error('Error loading new messages:', error);
+            }
+        }
+
+        async function markMessagesAsRead() {
+            try {
+                await fetch('/api/chat/mark-read', { method: 'POST' });
+            } catch (error) {
+                console.error('Error marking messages as read:', error);
             }
         }
 
@@ -284,12 +383,10 @@
                     <div class="max-w-[80%] px-4 py-2 rounded-2xl ${
                         isCurrentUser
                             ? 'bg-warm-500 text-white rounded-br-md'
-                            : isAdmin 
-                                ? 'bg-gray-700 text-white rounded-bl-md'
-                                : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
+                            : 'bg-gray-700 text-white rounded-bl-md'
                     }">
                         <div class="text-xs opacity-75 mb-1">
-                            ${isCurrentUser ? 'Вы' : (isAdmin ? 'Администратор' : escapeHtml(message.sender_name))}
+                            ${isCurrentUser ? 'Вы' : 'Служба поддержки'}
                         </div>
                         <div class="break-words">${escapeHtml(message.message)}</div>
                         <div class="text-xs opacity-75 mt-1">${formatDate(message.created_at)}</div>
@@ -303,6 +400,7 @@
             scrollToBottom();
         }
 
+        // Обработчик отправки сообщения
         document.getElementById('messageForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 

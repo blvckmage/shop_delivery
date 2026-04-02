@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Security;
 use App\Core\Validator;
+use App\Core\WhatsApp;
 use App\Models\OrderModel;
 use App\Models\ProductModel;
 
@@ -87,32 +88,79 @@ class OrderController extends Controller
             'delivery_included' => !empty($data['delivery_included'])
         ]);
         
+        // Проверяем результат создания
+        if ($orderId === -1) {
+            // Получаем активный заказ пользователя
+            $activeOrders = $this->orderModel->getByUserId($this->getUserId());
+            $activeOrder = null;
+            foreach ($activeOrders as $order) {
+                if (in_array($order['status'] ?? '', ['СОЗДАН', 'В_ПУТИ'])) {
+                    $activeOrder = $order;
+                    break;
+                }
+            }
+            
+            return $this->json([
+                'success' => false,
+                'error' => 'У вас уже есть активный заказ',
+                'active_order' => $activeOrder,
+                'redirect' => '/orders'
+            ], 400);
+        }
+        
+        if ($orderId === 0 || $orderId === null) {
+            return $this->error('Не удалось создать заказ. Попробуйте позже.', 500);
+        }
+        
         // Очищаем корзину
         $this->clearCart();
         
-        // Создаем уведомление для пользователя
-        \App\Controllers\ApiController::createNotification(
-            $this->db,
-            'order_created',
-            'Заказ оформлен',
-            "Ваш заказ #{$orderId} успешно оформлен и скоро будет готов к доставке!",
-            $this->getUserId(),
-            null,
-            false,
-            ['order_id' => $orderId]
-        );
+        // Создаем уведомление для пользователя (без прерывания если ошибка)
+        try {
+            \App\Controllers\ApiController::createNotification(
+                $this->db,
+                'order_created',
+                'Заказ оформлен',
+                "Ваш заказ #{$orderId} успешно оформлен и скоро будет готов к доставке!",
+                $this->getUserId(),
+                null,
+                false,
+                ['order_id' => $orderId]
+            );
+        } catch (\Exception $e) {
+            error_log("Failed to create user notification: " . $e->getMessage());
+        }
         
-        // Создаем уведомление для админов
-        \App\Controllers\ApiController::createNotification(
-            $this->db,
-            'new_order',
-            'Новый заказ',
-            "Поступил новый заказ #{$orderId} на сумму " . $this->calculateOrderTotal($items) . ' ₸',
-            null,
-            'admin',
-            false,
-            ['order_id' => $orderId]
-        );
+        // Создаем уведомление для админов (без прерывания если ошибка)
+        try {
+            \App\Controllers\ApiController::createNotification(
+                $this->db,
+                'new_order',
+                'Новый заказ',
+                "Поступил новый заказ #{$orderId} на сумму " . $this->calculateOrderTotal($items) . ' ₸',
+                null,
+                'admin',
+                false,
+                ['order_id' => $orderId]
+            );
+        } catch (\Exception $e) {
+            error_log("Failed to create admin notification: " . $e->getMessage());
+        }
+        
+        // Отправляем уведомление в WhatsApp группу (без прерывания если ошибка)
+        try {
+            $whatsapp = new WhatsApp();
+            if ($whatsapp->isAvailable()) {
+                $order = $this->orderModel->findById($orderId);
+                if ($order) {
+                    // Добавляем phone в заказ для уведомления
+                    $order['phone'] = $data['phone'] ?? '';
+                    $whatsapp->notifyNewOrder($order);
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("Failed to send WhatsApp notification: " . $e->getMessage());
+        }
         
         return $this->json([
             'success' => true,

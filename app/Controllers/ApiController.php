@@ -23,113 +23,6 @@ class ApiController extends Controller
         $this->orderModel = new OrderModel($this->db);
     }
     
-    // ==================== СБОРЩИК ====================
-    
-    /**
-     * Страница сборщика
-     */
-    public function pickerPage(Request $request): Response
-    {
-        $error = $this->requirePicker();
-        if ($error !== null) {
-            return $error;
-        }
-        
-        return $this->render('picker');
-    }
-    
-    /**
-     * API: Получить заказы для сборщика
-     */
-    public function pickerOrders(Request $request): Response
-    {
-        $error = $this->requirePicker();
-        if ($error !== null) {
-            return $error;
-        }
-        
-        // Получаем заказы со статусом "СОЗДАН" (для сборки)
-        $allOrders = $this->orderModel->getAll();
-        $pendingOrders = array_filter($allOrders, function($order) {
-            return $order['status'] === OrderModel::STATUS_CREATED;
-        });
-        
-        // Получаем заказы, собранные сегодня (из архива)
-        $archive = $this->orderModel->getArchive();
-        $pickerId = $this->getUserId();
-        $today = date('Y-m-d');
-        
-        $completedToday = array_filter($archive, function($order) use ($pickerId, $today) {
-            return isset($order['picker_id']) && $order['picker_id'] == $pickerId
-                && strpos($order['assembled_at'] ?? '', $today) === 0;
-        });
-        
-        // Получаем собранные заказы (статус В_ПУТИ и выше, собранные этим сборщиком)
-        $completedOrders = array_filter($allOrders, function($order) use ($pickerId) {
-            return isset($order['picker_id']) && $order['picker_id'] == $pickerId
-                && $order['status'] !== OrderModel::STATUS_CREATED;
-        });
-        
-        return $this->json([
-            'pending' => array_values($pendingOrders),
-            'completed' => array_values(array_merge($completedOrders, $completedToday)),
-            'completed_today' => count($completedToday)
-        ]);
-    }
-    
-    /**
-     * API: Отметить заказ как собранный
-     */
-    public function pickerAssembleOrder(Request $request, int $id): Response
-    {
-        $error = $this->requirePicker();
-        if ($error !== null) {
-            return $error;
-        }
-        
-        // Получаем заказ
-        $order = $this->orderModel->findById($id);
-        
-        if (!$order) {
-            return $this->error('Заказ не найден', 404);
-        }
-        
-        // Проверяем статус
-        if ($order['status'] !== OrderModel::STATUS_CREATED) {
-            return $this->error('Заказ уже обработан', 400);
-        }
-        
-        // Обновляем заказ: меняем статус на В_ПУТИ и записываем сборщика
-        $this->orderModel->update($id, [
-            'picker_id' => $this->getUserId(),
-            'assembled_at' => date('c')
-        ]);
-        
-        // Уведомление для пользователя о смене статуса
-        self::notifyUser(
-            $this->db,
-            $order['user_id'],
-            'order_assembled',
-            'Заказ собран',
-            "Ваш заказ #{$id} собран и скоро будет передан курьеру!",
-            ['order_id' => $id]
-        );
-        
-        // Уведомление для админов
-        self::notifyAdmins(
-            $this->db,
-            'order_assembled',
-            'Заказ собран',
-            "Сборщик {$this->getUser()['name']} собрал заказ #{$id}",
-            ['order_id' => $id, 'picker_id' => $this->getUserId()]
-        );
-        
-        return $this->json([
-            'success' => true,
-            'message' => 'Заказ отмечен как собранный'
-        ]);
-    }
-    
     // ==================== КУРЬЕР ====================
     
     /**
@@ -143,6 +36,136 @@ class ApiController extends Controller
         }
         
         return $this->render('courier');
+    }
+    
+    /**
+     * API: Получить статус смены курьера
+     */
+    public function getShiftStatus(Request $request): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $courierId = $this->getUserId();
+        
+        // Получаем активную смену
+        $activeShift = $this->db->queryOne(
+            "SELECT * FROM courier_shifts WHERE courier_id = ? AND is_active = 1 LIMIT 1",
+            [$courierId]
+        );
+        
+        return $this->json([
+            'is_on_shift' => $activeShift !== null,
+            'shift' => $activeShift
+        ]);
+    }
+    
+    /**
+     * API: Начать смену
+     */
+    public function startShift(Request $request): Response
+    {
+        try {
+            $error = $this->requireCourier();
+            if ($error !== null) {
+                return $error;
+            }
+            
+            $courierId = $this->getUserId();
+            
+            // Проверяем существование таблицы courier_shifts
+            try {
+                $this->db->query("SELECT 1 FROM courier_shifts LIMIT 1");
+            } catch (\Exception $e) {
+                // Создаем таблицу если не существует
+                $this->db->query("
+                    CREATE TABLE IF NOT EXISTS courier_shifts (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        courier_id INT NOT NULL,
+                        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        ended_at TIMESTAMP NULL DEFAULT NULL,
+                        is_active TINYINT(1) DEFAULT 1,
+                        FOREIGN KEY (courier_id) REFERENCES users(id) ON DELETE CASCADE,
+                        INDEX idx_courier (courier_id),
+                        INDEX idx_active (is_active),
+                        INDEX idx_started (started_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+            }
+            
+            // Проверяем, нет ли уже активной смены
+            $activeShift = $this->db->queryOne(
+                "SELECT id FROM courier_shifts WHERE courier_id = ? AND is_active = 1",
+                [$courierId]
+            );
+            
+            if ($activeShift) {
+                return $this->error('У вас уже есть активная смена', 400);
+            }
+            
+            // Создаем новую смену
+            $this->db->insert('courier_shifts', [
+                'courier_id' => $courierId,
+                'is_active' => 1
+            ]);
+            
+            return $this->json([
+                'success' => true,
+                'message' => 'Смена начата'
+            ]);
+        } catch (\Exception $e) {
+            error_log("Start shift error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return $this->json([
+                'success' => false,
+                'error' => 'Ошибка: ' . $e->getMessage(),
+                'debug' => [
+                    'file' => basename($e->getFile()),
+                    'line' => $e->getLine()
+                ]
+            ], 500);
+        }
+    }
+    
+    /**
+     * API: Закончить смену
+     */
+    public function endShift(Request $request): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $courierId = $this->getUserId();
+        
+        // Проверяем есть ли активные заказы
+        $activeOrders = $this->orderModel->getByCourierId($courierId);
+        $hasActiveOrders = array_filter($activeOrders, function($o) {
+            return $o['status'] === OrderModel::STATUS_ON_THE_WAY;
+        });
+        
+        if (count($hasActiveOrders) > 0) {
+            return $this->error('Нельзя закончить смену с активными заказами', 400);
+        }
+        
+        // Заканчиваем активную смену
+        $this->db->query(
+            "UPDATE courier_shifts SET is_active = 0, ended_at = NOW() WHERE courier_id = ? AND is_active = 1",
+            [$courierId]
+        );
+        
+        // Удаляем местоположение
+        $this->db->query(
+            "DELETE FROM courier_locations WHERE courier_id = ?",
+            [$courierId]
+        );
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Смена закончена'
+        ]);
     }
     
     /**
@@ -174,13 +197,25 @@ class ApiController extends Controller
             return $error;
         }
         
+        $courierId = $this->getUserId();
+        
+        // Проверяем, на смене ли курьер
+        $activeShift = $this->db->queryOne(
+            "SELECT id FROM courier_shifts WHERE courier_id = ? AND is_active = 1",
+            [$courierId]
+        );
+        
+        if (!$activeShift) {
+            return $this->error('Вы должны быть на смене, чтобы брать заказы', 400);
+        }
+        
         // Проверка доступности заказа
         if (!$this->orderModel->isAvailableForCourier($id)) {
             return $this->error('Заказ недоступен или уже взят другим курьером', 400);
         }
         
         // Проверяем, есть ли у курьера уже активный заказ
-        $currentOrders = $this->orderModel->getByCourierId($this->getUserId());
+        $currentOrders = $this->orderModel->getByCourierId($courierId);
         $activeOrders = array_filter($currentOrders, function($o) {
             return $o['status'] === OrderModel::STATUS_ON_THE_WAY;
         });
@@ -357,30 +392,30 @@ class ApiController extends Controller
             return $this->error('Требуются координаты', 400);
         }
         
-        // Сохраняем местоположение
-        $courierLocations = $this->db->read('courier');
-        $found = false;
+        $courierId = $this->getUserId();
+        $lat = floatval($data['lat']);
+        $lng = floatval($data['lng']);
         
-        foreach ($courierLocations as &$loc) {
-            if ($loc['courier_id'] == $this->getUserId()) {
-                $loc['lat'] = floatval($data['lat']);
-                $loc['lng'] = floatval($data['lng']);
-                $loc['updated_at'] = date('c');
-                $found = true;
-                break;
-            }
+        // Проверяем, есть ли уже запись для этого курьера
+        $existing = $this->db->queryOne(
+            "SELECT id FROM courier_locations WHERE courier_id = ?",
+            [$courierId]
+        );
+        
+        if ($existing) {
+            // Обновляем существующую запись
+            $this->db->query(
+                "UPDATE courier_locations SET latitude = ?, longitude = ?, updated_at = NOW() WHERE courier_id = ?",
+                [$lat, $lng, $courierId]
+            );
+        } else {
+            // Создаём новую запись
+            $this->db->insert('courier_locations', [
+                'courier_id' => $courierId,
+                'latitude' => $lat,
+                'longitude' => $lng
+            ]);
         }
-        
-        if (!$found) {
-            $courierLocations[] = [
-                'courier_id' => $this->getUserId(),
-                'lat' => floatval($data['lat']),
-                'lng' => floatval($data['lng']),
-                'updated_at' => date('c')
-            ];
-        }
-        
-        $this->db->write('courier', $courierLocations);
         
         return $this->json(['success' => true]);
     }
@@ -420,20 +455,24 @@ class ApiController extends Controller
             unset($courier['password']);
         }
         
-        // Получаем местоположение курьера
-        $courierLocations = $this->db->read('courier');
-        $location = null;
+        // Получаем местоположение курьера из MySQL
+        $location = $this->db->queryOne(
+            "SELECT latitude, longitude, updated_at FROM courier_locations WHERE courier_id = ?",
+            [$order['courier_id']]
+        );
         
-        foreach ($courierLocations as $loc) {
-            if ($loc['courier_id'] == $order['courier_id']) {
-                $location = $loc;
-                break;
-            }
+        $locationResult = null;
+        if ($location) {
+            $locationResult = [
+                'lat' => (float) $location['latitude'],
+                'lng' => (float) $location['longitude'],
+                'updated_at' => $location['updated_at']
+            ];
         }
         
         return $this->json([
             'courier' => $courier,
-            'location' => $location,
+            'location' => $locationResult,
             'order' => [
                 'id' => $order['id'],
                 'status' => $order['status'],
@@ -456,7 +495,17 @@ class ApiController extends Controller
         
         $couriers = $this->userModel->getCouriers();
         $orders = $this->orderModel->getAll();
-        $courierLocations = $this->db->read('courier');
+        
+        // Получаем местоположения из MySQL таблицы
+        $courierLocations = $this->db->query("SELECT courier_id, latitude, longitude, updated_at FROM courier_locations");
+        $locationMap = [];
+        foreach ($courierLocations as $loc) {
+            $locationMap[$loc['courier_id']] = [
+                'lat' => (float) $loc['latitude'],
+                'lng' => (float) $loc['longitude'],
+                'updated_at' => $loc['updated_at']
+            ];
+        }
         
         foreach ($couriers as &$courier) {
             unset($courier['password']);
@@ -472,13 +521,7 @@ class ApiController extends Controller
             }
             
             // Местоположение
-            $courier['location'] = null;
-            foreach ($courierLocations as $loc) {
-                if ($loc['courier_id'] == $courier['id']) {
-                    $courier['location'] = $loc;
-                    break;
-                }
-            }
+            $courier['location'] = $locationMap[$courier['id']] ?? null;
         }
         
         return $this->json(array_values($couriers));
@@ -556,39 +599,40 @@ class ApiController extends Controller
             return $error;
         }
         
-        $chat = $this->db->read('chat');
         $userId = $this->getUserId();
         $userRole = $this->getUser()['role'] ?? 'user';
         
         // Получаем ID всех админов
         $adminIds = array_map(fn($a) => $a['id'], $this->userModel->getAdmins());
+        $adminIdsStr = implode(',', $adminIds);
         
         if ($contactId === null || $contactId === 0) {
             // Для обычного пользователя показываем сообщения с админами
             if ($userRole !== 'admin') {
-                $messages = array_filter($chat, function($m) use ($userId, $adminIds) {
-                    $senderId = $m['sender_id'];
-                    $receiverId = $m['receiver_id'] ?? 0;
-                    // Сообщения от пользователя к админам
-                    if ($senderId == $userId && in_array($receiverId, $adminIds)) {
-                        return true;
-                    }
-                    // Сообщения от админов к пользователю
-                    if (in_array($senderId, $adminIds) && $receiverId == $userId) {
-                        return true;
-                    }
-                    return false;
-                });
+                $messages = $this->db->query(
+                    "SELECT c.*, u.name as sender_name, u.role as sender_role 
+                     FROM chat c 
+                     JOIN users u ON c.sender_id = u.id 
+                     WHERE (c.sender_id = ? AND c.receiver_id IN ({$adminIdsStr}))
+                        OR (c.sender_id IN ({$adminIdsStr}) AND c.receiver_id = ?)
+                     ORDER BY c.created_at ASC",
+                    [$userId, $userId]
+                );
             } else {
-                // Для админа - общий чат (устаревший)
-                $messages = array_filter($chat, fn($m) => !isset($m['receiver_id']) || $m['receiver_id'] == 0);
+                // Для админа - общий чат (устаревший) - возвращаем пустой массив
+                $messages = [];
             }
         } else {
             // Личные сообщения с конкретным контактом
-            $messages = array_filter($chat, function($m) use ($userId, $contactId) {
-                return ($m['sender_id'] == $userId && $m['receiver_id'] == $contactId) ||
-                       ($m['sender_id'] == $contactId && $m['receiver_id'] == $userId);
-            });
+            $messages = $this->db->query(
+                "SELECT c.*, u.name as sender_name, u.role as sender_role 
+                 FROM chat c 
+                 JOIN users u ON c.sender_id = u.id 
+                 WHERE (c.sender_id = ? AND c.receiver_id = ?)
+                    OR (c.sender_id = ? AND c.receiver_id = ?)
+                 ORDER BY c.created_at ASC",
+                [$userId, $contactId, $contactId, $userId]
+            );
         }
         
         return $this->json(array_values($messages));
@@ -596,6 +640,7 @@ class ApiController extends Controller
     
     /**
      * API: Отправить сообщение
+     * Все сообщения отправляются админу с телефоном 7771234567
      */
     public function chatSend(Request $request, ?int $contactId = null): Response
     {
@@ -610,30 +655,42 @@ class ApiController extends Controller
             return $this->error('Сообщение не может быть пустым', 400);
         }
         
-        $chat = $this->db->read('chat');
+        // Находим админа с телефоном 7771234567
+        $admin = $this->db->queryOne(
+            "SELECT id FROM users WHERE phone = ? AND role = 'admin' LIMIT 1",
+            ['7771234567']
+        );
         
-        // Если пользователь не админ и не указан получатель, отправляем админу
-        $receiverId = $contactId ?? 0;
-        if ($receiverId === 0 && ($this->getUser()['role'] ?? 'user') !== 'admin') {
-            // Находим первого админа
-            $admins = $this->userModel->getAdmins();
-            if (!empty($admins)) {
-                $receiverId = $admins[0]['id'];
-            }
-        }
+        $receiverId = $admin['id'] ?? 1; // Fallback на ID 1 если админ не найден
         
-        $message = [
-            'id' => $this->db->getNextId('chat'),
+        // Сохраняем сообщение в MySQL
+        $this->db->insert('chat', [
             'sender_id' => $this->getUserId(),
-            'sender_name' => $this->getUser()['name'],
-            'sender_role' => $this->getUser()['role'] ?? 'user',
             'receiver_id' => $receiverId,
             'message' => Security::sanitize($data['message']),
-            'created_at' => date('c')
-        ];
+            'is_read' => 0
+        ]);
         
-        $chat[] = $message;
-        $this->db->write('chat', $chat);
+        return $this->json(['success' => true]);
+    }
+    
+    /**
+     * API: Пометить сообщения прочитанными
+     */
+    public function chatMarkRead(Request $request): Response
+    {
+        $error = $this->requireAuth();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $userId = $this->getUserId();
+        
+        // Помечаем все сообщения от админов к текущему пользователю как прочитанные
+        $this->db->query(
+            "UPDATE chat SET is_read = 1 WHERE receiver_id = ? AND is_read = 0",
+            [$userId]
+        );
         
         return $this->json(['success' => true]);
     }
@@ -741,6 +798,114 @@ class ApiController extends Controller
         return $this->json(['success' => true]);
     }
     
+    // ==================== КУРЬЕР: ЧАТ ====================
+    
+    /**
+     * API: Контакты чата для курьера (админы)
+     */
+    public function courierChatContacts(Request $request): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $admins = $this->userModel->getAdmins();
+        $courierId = $this->getUserId();
+        
+        $contacts = [];
+        foreach ($admins as $admin) {
+            unset($admin['password']);
+            
+            // Получаем последнее сообщение с этим админом из MySQL
+            $lastMessage = $this->db->queryOne(
+                "SELECT c.*, u.name as sender_name, u.role as sender_role 
+                 FROM chat c 
+                 JOIN users u ON c.sender_id = u.id 
+                 WHERE (c.sender_id = ? AND c.receiver_id = ?) OR (c.sender_id = ? AND c.receiver_id = ?)
+                 ORDER BY c.created_at DESC LIMIT 1",
+                [$courierId, $admin['id'], $admin['id'], $courierId]
+            );
+            
+            // Непрочитанные сообщения от админа
+            $unreadCount = $this->db->count('chat', 'sender_id = ? AND receiver_id = ? AND is_read = 0', [$admin['id'], $courierId]);
+            
+            $contacts[] = [
+                'id' => $admin['id'],
+                'name' => $admin['name'],
+                'phone' => $admin['phone'] ?? '',
+                'role' => 'admin',
+                'last_message' => $lastMessage['message'] ?? null,
+                'last_message_time' => $lastMessage['created_at'] ?? null,
+                'unread_count' => $unreadCount
+            ];
+        }
+        
+        return $this->json($contacts);
+    }
+    
+    /**
+     * API: Сообщения чата для курьера с конкретным админом
+     */
+    public function courierChatMessages(Request $request, int $adminId): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $courierId = $this->getUserId();
+        
+        // Получаем все сообщения между курьером и админом из MySQL
+        $messages = $this->db->query(
+            "SELECT c.*, u.name as sender_name, u.role as sender_role 
+             FROM chat c 
+             JOIN users u ON c.sender_id = u.id 
+             WHERE (c.sender_id = ? AND c.receiver_id = ?) OR (c.sender_id = ? AND c.receiver_id = ?)
+             ORDER BY c.created_at ASC",
+            [$courierId, $adminId, $adminId, $courierId]
+        );
+        
+        return $this->json(array_values($messages));
+    }
+    
+    /**
+     * API: Отправить сообщение от курьера админу
+     */
+    public function courierChatSend(Request $request, int $adminId): Response
+    {
+        $error = $this->requireCourier();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $data = $request->json();
+        
+        if (empty($data['message'])) {
+            return $this->error('Сообщение не может быть пустым', 400);
+        }
+        
+        // Сохраняем сообщение в MySQL
+        $this->db->insert('chat', [
+            'sender_id' => $this->getUserId(),
+            'receiver_id' => $adminId,
+            'message' => Security::sanitize($data['message']),
+            'is_read' => 0
+        ]);
+        
+        // Уведомление для админа
+        self::notifyUser(
+            $this->db,
+            $adminId,
+            'new_message',
+            'Новое сообщение',
+            "Курьер {$this->getUser()['name']} отправил вам сообщение",
+            ['courier_id' => $this->getUserId()]
+        );
+        
+        return $this->json(['success' => true]);
+    }
+
     // ==================== АДМИН: ЧАТ ====================
     
     /**
@@ -753,27 +918,20 @@ class ApiController extends Controller
             return $error;
         }
         
-        $chat = $this->db->read('chat');
-        $adminId = $this->getUserId();
-        
         // Получаем ID всех админов
         $adminIds = array_map(fn($a) => $a['id'], $this->userModel->getAdmins());
+        $adminIdsStr = implode(',', $adminIds);
         
-        // Показываем все сообщения между пользователем и любым админом
-        $messages = array_filter($chat, function($m) use ($userId, $adminIds) {
-            $senderId = $m['sender_id'];
-            $receiverId = $m['receiver_id'] ?? 0;
-            
-            // Сообщения от пользователя к админам
-            if ($senderId == $userId && in_array($receiverId, $adminIds)) {
-                return true;
-            }
-            // Сообщения от админов к пользователю
-            if (in_array($senderId, $adminIds) && $receiverId == $userId) {
-                return true;
-            }
-            return false;
-        });
+        // Получаем сообщения из MySQL
+        $messages = $this->db->query(
+            "SELECT c.*, u.name as sender_name, u.role as sender_role 
+             FROM chat c 
+             JOIN users u ON c.sender_id = u.id 
+             WHERE (c.sender_id = ? AND c.receiver_id IN ({$adminIdsStr}))
+                OR (c.sender_id IN ({$adminIdsStr}) AND c.receiver_id = ?)
+             ORDER BY c.created_at ASC",
+            [$userId, $userId]
+        );
         
         return $this->json(array_values($messages));
     }
@@ -788,64 +946,35 @@ class ApiController extends Controller
             return $error;
         }
         
-        $chat = $this->db->read('chat');
-        $users = $this->userModel->getAll();
-        $adminId = $this->getUserId();
-        
         // Получаем ID всех админов
         $adminIds = array_map(fn($a) => $a['id'], $this->userModel->getAdmins());
+        $adminIdsStr = implode(',', $adminIds);
         
-        $userIds = [];
-        foreach ($chat as $msg) {
-            // Если отправитель не админ - это пользователь
-            if (!in_array($msg['sender_id'], $adminIds)) {
-                $userIds[$msg['sender_id']] = true;
-            }
-            // Если получатель не админ - это пользователь
-            if (isset($msg['receiver_id']) && $msg['receiver_id'] > 0 && !in_array($msg['receiver_id'], $adminIds)) {
-                $userIds[$msg['receiver_id']] = true;
-            }
-        }
+        // Получаем пользователей с сообщениями из MySQL
+        $users = $this->db->query(
+            "SELECT DISTINCT 
+                u.id, u.name, u.phone, u.role,
+                (SELECT c2.message FROM chat c2 
+                 WHERE (c2.sender_id = u.id AND c2.receiver_id IN ({$adminIdsStr}))
+                    OR (c2.sender_id IN ({$adminIdsStr}) AND c2.receiver_id = u.id)
+                 ORDER BY c2.created_at DESC LIMIT 1) as last_message,
+                (SELECT c3.created_at FROM chat c3 
+                 WHERE (c3.sender_id = u.id AND c3.receiver_id IN ({$adminIdsStr}))
+                    OR (c3.sender_id IN ({$adminIdsStr}) AND c3.receiver_id = u.id)
+                 ORDER BY c3.created_at DESC LIMIT 1) as last_message_time,
+                (SELECT COUNT(*) FROM chat c4 
+                 WHERE c4.sender_id = u.id AND c4.receiver_id IN ({$adminIdsStr}) AND c4.is_read = 0) as unread_count
+             FROM users u
+             WHERE u.id NOT IN ({$adminIdsStr})
+                AND EXISTS (
+                    SELECT 1 FROM chat c 
+                    WHERE (c.sender_id = u.id AND c.receiver_id IN ({$adminIdsStr}))
+                       OR (c.sender_id IN ({$adminIdsStr}) AND c.receiver_id = u.id)
+                )
+             ORDER BY last_message_time DESC"
+        );
         
-        $result = [];
-        foreach ($userIds as $uid => $_) {
-            $user = null;
-            foreach ($users as $u) {
-                if ($u['id'] == $uid) {
-                    $user = $u;
-                    break;
-                }
-            }
-            
-            if ($user) {
-                // Все сообщения пользователя с админами
-                $userMessages = array_filter($chat, function($m) use ($uid, $adminIds) {
-                    $senderId = $m['sender_id'];
-                    $receiverId = $m['receiver_id'] ?? 0;
-                    return ($senderId == $uid && in_array($receiverId, $adminIds)) ||
-                           (in_array($senderId, $adminIds) && $receiverId == $uid);
-                });
-                $userMessages = array_values($userMessages);
-                $lastMessage = end($userMessages);
-                
-                // Непрочитанные - сообщения от пользователя к текущему админу
-                $unread = count(array_filter($chat, fn($m) => 
-                    $m['sender_id'] == $uid && 
-                    isset($m['receiver_id']) && 
-                    $m['receiver_id'] == $adminId
-                ));
-                
-                $result[] = [
-                    'id' => $user['id'],
-                    'name' => $user['name'],
-                    'phone' => $user['phone'],
-                    'last_message' => $lastMessage['message'] ?? null,
-                    'unread_count' => $unread
-                ];
-            }
-        }
-        
-        return $this->json($result);
+        return $this->json(array_values($users));
     }
     
     /**
@@ -864,21 +993,33 @@ class ApiController extends Controller
             return $this->error('Требуется сообщение и ID пользователя', 400);
         }
         
-        $chat = $this->db->read('chat');
-        
-        $message = [
-            'id' => $this->db->getNextId('chat'),
+        // Сохраняем сообщение в MySQL
+        $this->db->insert('chat', [
             'sender_id' => $this->getUserId(),
-            'sender_name' => $this->getUser()['name'],
-            'sender_role' => 'admin',
             'receiver_id' => intval($data['user_id']),
             'message' => Security::sanitize($data['message']),
-            'created_at' => date('c')
-        ];
-        
-        $chat[] = $message;
-        $this->db->write('chat', $chat);
+            'is_read' => 0
+        ]);
 
+        return $this->json(['success' => true]);
+    }
+    
+    /**
+     * API: Пометить сообщения прочитанными (админ)
+     */
+    public function adminChatMarkRead(Request $request, int $userId): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        // Помечаем все сообщения от пользователя к админам как прочитанные
+        $this->db->query(
+            "UPDATE chat SET is_read = 1 WHERE sender_id = ? AND is_read = 0",
+            [$userId]
+        );
+        
         return $this->json(['success' => true]);
     }
     
@@ -941,13 +1082,15 @@ class ApiController extends Controller
                     'phone' => $courier['phone']
                 ];
                 
-                // Получаем местоположение курьера
-                $courierLocations = $this->db->findBy('courier', 'courier_id', $order['courier_id']);
-                if (!empty($courierLocations)) {
-                    $lastLocation = end($courierLocations);
+                // Получаем местоположение курьера из MySQL
+                $location = $this->db->queryOne(
+                    "SELECT latitude, longitude FROM courier_locations WHERE courier_id = ?",
+                    [$order['courier_id']]
+                );
+                if ($location) {
                     $result['courier_location'] = [
-                        'lat' => $lastLocation['lat'] ?? 43.518703,
-                        'lng' => $lastLocation['lng'] ?? 68.505423
+                        'lat' => (float) $location['latitude'],
+                        'lng' => (float) $location['longitude']
                     ];
                 }
             }
@@ -989,31 +1132,18 @@ class ApiController extends Controller
      */
     public function getUserNotifications(Request $request): Response
     {
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
         
-        $userNotifications = array_filter($notifications, function($n) use ($userId) {
-            // Уведомления для всех пользователей
-            if (isset($n['for_all']) && $n['for_all']) {
-                // Для пользователей проверяем read_by
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            // Личные уведомления пользователя
-            if (isset($n['user_id']) && $n['user_id'] == $userId && empty($n['read'])) {
-                return true;
-            }
-            // Уведомления для всех пользователей (не для ролей)
-            if (isset($n['for_users']) && $n['for_users'] === true) {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            return false;
-        });
+        // Получаем непрочитанные уведомления пользователя из MySQL
+        $notifications = $this->db->query(
+            "SELECT id, title, message, is_read, created_at 
+             FROM notifications 
+             WHERE user_id = ? AND is_read = 0 
+             ORDER BY created_at DESC",
+            [$userId]
+        );
         
-        usort($userNotifications, function($a, $b) {
-            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
-        });
-        
-        return $this->json(array_values($userNotifications));
+        return $this->json(array_values($notifications));
     }
     
     /**
@@ -1021,26 +1151,18 @@ class ApiController extends Controller
      */
     public function getAdminNotifications(Request $request): Response
     {
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
         
-        $adminNotifications = array_filter($notifications, function($n) use ($userId) {
-            // Уведомления для админов
-            if (isset($n['for_role']) && $n['for_role'] === 'admin') {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            // Уведомления для всех админов
-            if (isset($n['for_admins']) && $n['for_admins'] === true) {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            return false;
-        });
+        // Получаем непрочитанные уведомления админа из MySQL
+        $notifications = $this->db->query(
+            "SELECT id, title, message, is_read, created_at 
+             FROM notifications 
+             WHERE user_id = ? AND is_read = 0 
+             ORDER BY created_at DESC",
+            [$userId]
+        );
         
-        usort($adminNotifications, function($a, $b) {
-            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
-        });
-        
-        return $this->json(array_values($adminNotifications));
+        return $this->json(array_values($notifications));
     }
     
     /**
@@ -1048,30 +1170,18 @@ class ApiController extends Controller
      */
     public function getCourierNotifications(Request $request): Response
     {
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
         
-        $courierNotifications = array_filter($notifications, function($n) use ($userId) {
-            // Уведомления для курьеров
-            if (isset($n['for_role']) && $n['for_role'] === 'courier') {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            // Уведомления для всех курьеров
-            if (isset($n['for_couriers']) && $n['for_couriers'] === true) {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            // Личные уведомления курьера
-            if (isset($n['user_id']) && $n['user_id'] == $userId && empty($n['read'])) {
-                return true;
-            }
-            return false;
-        });
+        // Получаем непрочитанные уведомления курьера из MySQL
+        $notifications = $this->db->query(
+            "SELECT id, title, message, is_read, created_at 
+             FROM notifications 
+             WHERE user_id = ? AND is_read = 0 
+             ORDER BY created_at DESC",
+            [$userId]
+        );
         
-        usort($courierNotifications, function($a, $b) {
-            return strtotime($b['created_at'] ?? '') - strtotime($a['created_at'] ?? '');
-        });
-        
-        return $this->json(array_values($courierNotifications));
+        return $this->json(array_values($notifications));
     }
     
     /**
@@ -1084,29 +1194,15 @@ class ApiController extends Controller
             return $error;
         }
         
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
-        $userRole = $this->getUser()['role'] ?? 'user';
         
-        $unreadCount = count(array_filter($notifications, function($n) use ($userId, $userRole) {
-            if (!empty($n['read'])) {
-                return false;
-            }
-            
-            if (isset($n['for_all']) && $n['for_all']) {
-                // Проверяем, прочитал ли конкретный пользователь
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            if (isset($n['user_id']) && $n['user_id'] == $userId) {
-                return true;
-            }
-            if (isset($n['for_role']) && $n['for_role'] === $userRole) {
-                return !isset($n['read_by']) || !in_array($userId, $n['read_by']);
-            }
-            return false;
-        }));
+        // Считаем непрочитанные уведомления пользователя
+        $result = $this->db->queryOne(
+            "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+            [$userId]
+        );
         
-        return $this->json(['count' => $unreadCount]);
+        return $this->json(['count' => (int) ($result['count'] ?? 0)]);
     }
     
     /**
@@ -1119,24 +1215,13 @@ class ApiController extends Controller
             return $error;
         }
         
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
         
-        foreach ($notifications as &$n) {
-            if ($n['id'] == $id) {
-                if (isset($n['for_all']) && $n['for_all']) {
-                    $n['read_by'] = $n['read_by'] ?? [];
-                    if (!in_array($userId, $n['read_by'])) {
-                        $n['read_by'][] = $userId;
-                    }
-                } else {
-                    $n['read'] = true;
-                }
-                break;
-            }
-        }
-        
-        $this->db->write('notifications', $notifications);
+        // Помечаем уведомление как прочитанное (только если принадлежит пользователю)
+        $this->db->query(
+            "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+            [$id, $userId]
+        );
         
         return $this->json(['success' => true]);
     }
@@ -1151,34 +1236,13 @@ class ApiController extends Controller
             return $error;
         }
         
-        $notifications = $this->db->read('notifications');
         $userId = $this->getUserId();
-        $userRole = $this->getUser()['role'] ?? 'user';
         
-        foreach ($notifications as &$n) {
-            $isForUser = false;
-            
-            if (isset($n['for_all']) && $n['for_all']) {
-                $isForUser = true;
-            } elseif (isset($n['user_id']) && $n['user_id'] == $userId) {
-                $isForUser = true;
-            } elseif (isset($n['for_role']) && $n['for_role'] === $userRole) {
-                $isForUser = true;
-            }
-            
-            if ($isForUser) {
-                if (isset($n['for_all']) && $n['for_all']) {
-                    $n['read_by'] = $n['read_by'] ?? [];
-                    if (!in_array($userId, $n['read_by'])) {
-                        $n['read_by'][] = $userId;
-                    }
-                } else {
-                    $n['read'] = true;
-                }
-            }
-        }
-        
-        $this->db->write('notifications', $notifications);
+        // Помечаем все уведомления пользователя как прочитанные
+        $this->db->query(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+            [$userId]
+        );
         
         return $this->json(['success' => true]);
     }
@@ -1196,30 +1260,16 @@ class ApiController extends Controller
         bool $forAll = false,
         ?array $data = null
     ): void {
-        $notifications = $db->read('notifications');
+        // Для MySQL используем прямой insert
+        // Если userId не указан, используем 0 для системных уведомлений
+        $targetUserId = $userId ?? 0;
         
-        $notification = [
-            'id' => $db->getNextId('notifications'),
-            'type' => $type,
+        $db->insert('notifications', [
+            'user_id' => $targetUserId,
             'title' => $title,
             'message' => $message,
-            'created_at' => date('c'),
-            'read' => false,
-            'read_by' => [],
-            'data' => $data
-        ];
-        
-        if ($forAll) {
-            $notification['for_all'] = true;
-            $notification['for_users'] = true;
-        } elseif ($userId !== null) {
-            $notification['user_id'] = $userId;
-        } elseif ($forRole !== null) {
-            $notification['for_role'] = $forRole;
-        }
-        
-        $notifications[] = $notification;
-        $db->write('notifications', $notifications);
+            'is_read' => 0
+        ]);
     }
     
     /**
@@ -1246,21 +1296,16 @@ class ApiController extends Controller
         string $message,
         ?array $data = null
     ): void {
-        $notifications = $db->read('notifications');
-        
-        $notifications[] = [
-            'id' => $db->getNextId('notifications'),
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'created_at' => date('c'),
-            'read' => false,
-            'read_by' => [],
-            'for_users' => true,
-            'data' => $data
-        ];
-        
-        $db->write('notifications', $notifications);
+        // Получаем всех пользователей
+        $users = $db->query("SELECT id FROM users WHERE role = 'user'");
+        foreach ($users as $user) {
+            $db->insert('notifications', [
+                'user_id' => $user['id'],
+                'title' => $title,
+                'message' => $message,
+                'is_read' => 0
+            ]);
+        }
     }
     
     /**
@@ -1273,26 +1318,20 @@ class ApiController extends Controller
         string $message,
         ?array $data = null
     ): void {
-        $notifications = $db->read('notifications');
-        
-        $notifications[] = [
-            'id' => $db->getNextId('notifications'),
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'created_at' => date('c'),
-            'read' => false,
-            'read_by' => [],
-            'for_admins' => true,
-            'for_role' => 'admin',
-            'data' => $data
-        ];
-        
-        $db->write('notifications', $notifications);
+        // Получаем всех админов
+        $admins = $db->query("SELECT id FROM users WHERE role = 'admin'");
+        foreach ($admins as $admin) {
+            $db->insert('notifications', [
+                'user_id' => $admin['id'],
+                'title' => $title,
+                'message' => $message,
+                'is_read' => 0
+            ]);
+        }
     }
     
     /**
-     * Создать уведомление для всех курьеров
+     * Создать уведомление для всех курьеров на смене
      */
     public static function notifyCouriers(
         \App\Core\Database $db,
@@ -1301,22 +1340,20 @@ class ApiController extends Controller
         string $message,
         ?array $data = null
     ): void {
-        $notifications = $db->read('notifications');
-        
-        $notifications[] = [
-            'id' => $db->getNextId('notifications'),
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'created_at' => date('c'),
-            'read' => false,
-            'read_by' => [],
-            'for_couriers' => true,
-            'for_role' => 'courier',
-            'data' => $data
-        ];
-        
-        $db->write('notifications', $notifications);
+        // Получаем всех курьеров на активной смене
+        $couriers = $db->query(
+            "SELECT u.id FROM users u 
+             INNER JOIN courier_shifts cs ON u.id = cs.courier_id 
+             WHERE u.role = 'courier' AND cs.is_active = 1"
+        );
+        foreach ($couriers as $courier) {
+            $db->insert('notifications', [
+                'user_id' => $courier['id'],
+                'title' => $title,
+                'message' => $message,
+                'is_read' => 0
+            ]);
+        }
     }
     
     /**

@@ -141,26 +141,6 @@ class Controller
     }
     
     /**
-     * Проверка роли сборщика
-     */
-    protected function requirePicker(): ?Response
-    {
-        $authError = $this->requireAuth();
-        if ($authError !== null) {
-            return $authError;
-        }
-        
-        if (!$this->session->isPicker()) {
-            if ($this->isApiRequest()) {
-                return $this->error('Доступ запрещен', 403);
-            }
-            return $this->redirect('/');
-        }
-        
-        return null;
-    }
-    
-    /**
      * Проверка CSRF токена
      */
     protected function verifyCsrf(Request $request): bool

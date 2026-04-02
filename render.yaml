@@ -1,6 +1,7 @@
 services:
+  # Веб-приложение
   - type: web
-    name: kazyna-market
+    name: delivery-shop
     env: docker
     plan: free
     buildFilter:
@@ -9,3 +10,50 @@ services:
     envVars:
       - key: PHP_VERSION
         value: "8.2"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_HOST
+        fromService:
+          name: delivery-shop-db
+          type: pserv
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        value: delivery_shop
+      - key: DB_USER
+        value: delivery_user
+      - key: DB_PASS
+        fromService:
+          name: delivery-shop-db
+          type: pserv
+          envVarKey: MYSQL_PASSWORD
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_LIFETIME
+        value: "7200"
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: TWILIO_WHATSAPP_TO
+        sync: false
+
+  # База данных MySQL
+  - type: pserv
+    name: delivery-shop-db
+    env: docker
+    plan: free
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+      - key: MYSQL_DATABASE
+        value: delivery_shop
+      - key: MYSQL_USER
+        value: delivery_user
+      - key: MYSQL_PASSWORD
+        generateValue: true

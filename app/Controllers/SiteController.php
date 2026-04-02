@@ -80,11 +80,7 @@ class SiteController extends Controller
             return $error;
         }
         
-        // Курьеров редиректим на их страницу
-        if ($this->session->isCourier()) {
-            return $this->redirect('/courier');
-        }
-        
+        // Курьеры тоже могут видеть профиль
         return $this->render('profile');
     }
     
@@ -116,11 +112,7 @@ class SiteController extends Controller
             return $error;
         }
         
-        // Курьеров редиректим на их страницу
-        if ($this->session->isCourier()) {
-            return $this->redirect('/courier');
-        }
-        
+        // Курьеры тоже могут использовать чат
         return $this->render('chat');
     }
     

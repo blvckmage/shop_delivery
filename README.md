@@ -1,165 +1,324 @@
-# Delivery - PHP E-commerce Application
+# 🛒 Delivery Shop v2
 
-Простое веб-приложение для электронной коммерции, разработанное на чистом PHP без использования фреймворков.
+Интернет-магазин доставки продуктов с админ-панелью, системой заказов и курьерской доставкой.
 
-## Особенности
+## 📋 Функционал
 
-- **Каталог товаров** с категориями и фильтрацией
-- **Корзина покупок** с возможностью добавления, изменения количества и удаления товаров
-- **Система заказов** с доставкой и оплатой
-- **Регистрация и авторизация** пользователей
-- **Профиль пользователя** с историей заказов
-- **Админ панель** для управления товарами, категориями, заказами и пользователями
-- **Курьерский модуль** с системой запросов на доставку
-- **Чат** для общения пользователей
-- **Избранные товары** и отзывы
-- **Архив заказов** для управления завершенными заказами
+### Для клиентов:
+- 🏪 Каталог товаров с категориями
+- 🛒 Корзина с возможностью изменения количества
+- 📦 Оформление заказов с доставкой
+- 💬 Чат с поддержкой
+- 👤 Личный кабинет
 
-## Технологии
+### Для администраторов:
+- 📊 Дашборд с статистикой
+- 📦 Управление товарами и категориями
+- 👥 Управление пользователями и ролями
+- 🚗 Отслеживание курьеров на карте
+- 💬 Чат с клиентами
 
-- PHP 8.0+
-- HTML5, CSS3, JavaScript
-- Tailwind CSS
-- Leaflet.js (для карты курьеров)
-- JSON (хранилище данных)
+### Для курьеров:
+- 📍 GPS трекинг местоположения
+- 📋 Список доступных заказов
+- 🔄 Изменение статуса заказа
 
-## Установка
+### Для сборщиков:
+- 📋 Список заказов для сборки
+- ✅ Отметка о готовности заказа
 
-1. Склонируйте репозиторий:
-   ```bash
-   git clone <repository-url>
-   cd kazyna_first
-   ```
+## 🛠 Технологии
 
-2. Запустите локальный сервер PHP:
-   ```bash
-   php -S localhost:8000
-   ```
+- **Backend**: PHP 8.2 (MVC архитектура)
+- **Database**: MySQL 8.0
+- **Frontend**: Tailwind CSS, vanilla JavaScript
+- **Maps**: Leaflet (OpenStreetMap)
 
-3. Откройте в браузере: http://localhost:8000
-
-## Структура проекта
+## 📁 Структура проекта
 
 ```
-kazyna_first/
-├── index.php              # Главный файл приложения
-├── public/                 # Публичные файлы
-│   ├── .htaccess          # Настройки Apache
-│   ├── index.php          # Точка входа
-│   ├── robots.txt         # Файл для поисковых роботов
-│   ├── sitemap.xml        # Карта сайта
-│   └── uploads/           # Загрузка изображений
-├── templates/             # Шаблоны страниц
-│   ├── home.php          # Главная страница
-│   ├── catalog.php       # Каталог товаров
-│   ├── cart.php          # Корзина
-│   ├── order.php         # Оформление заказа
-│   ├── orders.php        # История заказов
-│   ├── profile.php       # Профиль пользователя
-│   ├── chat.php          # Чат
-│   ├── login.php         # Страница входа
-│   ├── register.php      # Страница регистрации
-│   ├── courier.php       # Курьерский модуль
-│   └── admin.php         # Админ панель
-├── data/                 # Данные приложения
-│   ├── users.json        # Пользователи
-│   ├── categories.json   # Категории
-│   ├── products.json     # Товары
-│   ├── orders.json       # Заказы
-│   ├── favorites.json    # Избранные товары
-│   ├── reviews.json      # Отзывы
-│   ├── chat.json         # Сообщения чата
-│   ├── notifications.json # Уведомления
-│   ├── courier.json      # Местоположение курьеров
-│   └── archive.json      # Архив заказов
-├── .htaccess             # Настройки корневого каталога
-├── .gitignore            # Файлы для игнорирования Git
-└── README.md             # Документация
+delivery_shop_v2/
+├── app/
+│   ├── Controllers/    # Контроллеры
+│   ├── Core/          # Ядро приложения
+│   ├── Models/        # Модели данных
+│   └── Router/        # Маршрутизатор
+├── database/
+│   └── schema.sql     # Схема базы данных
+├── templates/         # HTML шаблоны
+├── uploads/           # Загруженные файлы
+├── public/            # Публичные файлы
+├── .env               # Конфигурация окружения
+├── index.php          # Точка входа
+└── Dockerfile         # Docker конфигурация
 ```
 
-## Пользовательские роли
+## 🚀 Деплой
 
-### Обычный пользователь
-- Просмотр каталога товаров
-- Добавление товаров в корзину
-- Оформление заказов
-- Просмотр истории заказов
-- Добавление товаров в избранное
-- Оставление отзывов
-- Общение в чате
+### Вариант 1: Render.com (рекомендуется)
 
-### Курьер
-- Просмотр доступных заказов
-- Взятие заказов в работу
-- Обновление статуса заказов
-- Отслеживание местоположения на карте
-- Отмена заказов
+1. **Создайте аккаунт на [Render.com](https://render.com)**
 
-### Администратор
-- Управление категориями товаров
-- Управление товарами (добавление, редактирование, удаление)
-- Управление заказами (изменение статусов)
-- Управление пользователями (роли, блокировка)
-- Просмотр статистики продаж
-- Управление архивом заказов
-- Просмотр запросов курьеров
-- Управление картой курьеров
+2. **Подключите GitHub репозиторий**
 
-## API Endpoints
+3. **Создайте MySQL базу данных:**
+   - New → MySQL → выберите имя `delivery-shop-db`
+   - Сохраните параметры подключения
 
-### Пользователи
-- `POST /api/auth/login` - Авторизация
-- `POST /api/auth/register` - Регистрация
-- `POST /api/auth/logout` - Выход
-- `PUT /api/profile/update` - Обновление профиля
+4. **Создайте веб-сервис:**
+   - New → Web Service → подключите репозиторий
+   - Environment: Docker
+   - Добавьте переменные окружения:
+     ```
+     DB_HOST=<внутренний-хост-базы>
+     DB_PORT=3306
+     DB_NAME=delivery_shop
+     DB_USER=delivery_user
+     DB_PASS=<пароль-базы>
+     JWT_SECRET=<случайная-строка-32+символа>
+     ```
 
-### Товары
-- `GET /api/products` - Получение товаров
-- `GET /api/admin/products` - Получение товаров (админ)
-- `POST /api/admin/products` - Добавление товара
-- `PUT /api/admin/products/{id}` - Обновление товара
-- `DELETE /api/admin/products/{id}` - Удаление товара
+5. **Инициализируйте базу данных:**
+   - Выполните SQL из `database/schema.sql` через Render Dashboard
 
-### Заказы
-- `POST /api/orders` - Создание заказа
-- `GET /api/orders/my` - Получение заказов пользователя
-- `PUT /api/admin/orders/{id}/status` - Изменение статуса заказа
-- `POST /api/admin/orders/{id}/archive` - Перемещение заказа в архив
+### Вариант 2: VPS (Ubuntu)
 
-### Корзина
-- `GET /api/cart` - Получение корзины
-- `POST /api/cart/add` - Добавление в корзину
-- `PUT /api/cart/update` - Обновление корзины
-- `DELETE /api/cart/remove/{id}` - Удаление из корзины
-- `DELETE /api/cart/clear` - Очистка корзины
+```bash
+# 1. Установите необходимые пакеты
+sudo apt update
+sudo apt install nginx mysql-server php8.2-fpm php8.2-mysql php8.2-mbstring php8.2-xml
 
-### Курьеры
-- `GET /api/courier/orders` - Получение доступных заказов
-- `GET /api/courier/current-orders` - Получение текущих заказов
-- `POST /api/orders/{id}/take` - Взятие заказа
-- `POST /api/orders/{id}/status` - Обновление статуса заказа
-- `POST /api/courier/location` - Обновление местоположения
+# 2. Клонируйте проект
+git clone https://github.com/ваш-репозиторий/delivery_shop_v2.git
+cd delivery_shop_v2
 
-## Безопасность
+# 3. Создайте базу данных
+sudo mysql -e "CREATE DATABASE delivery_shop;"
+sudo mysql -e "CREATE USER 'delivery_user'@'localhost' IDENTIFIED BY 'secure_password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON delivery_shop.* TO 'delivery_user'@'localhost';"
+sudo mysql delivery_shop < database/schema.sql
 
-- Пароли хранятся в хеш-формате
-- CSRF-защита через сессии
-- Валидация входных данных
-- Ограничение доступа к админ панели
+# 4. Настройте .env
+cp .env.example .env
+nano .env  # Заполните реальные данные
 
-## Тестирование
+# 5. Настройте права доступа
+chmod -R 755 uploads/
+chown -R www-data:www-data uploads/
 
-Для тестирования приложения:
+# 6. Настройте Nginx (см. конфиг ниже)
+```
 
-1. Зарегистрируйте нового пользователя
-2. Добавьте товары в корзину
-3. Оформите заказ
-4. Авторизуйтесь как администратор
-5. Измените статус заказа
-6. Авторизуйтесь как курьер
-7. Возьмите заказ в работу
-8. Обновите статус доставки
+**Nginx конфигурация:**
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    root /var/www/delivery_shop_v2;
+    index index.php;
 
-## Лицензия
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
 
-Этот проект распространяется под лицензией MIT.
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(env|git) {
+        deny all;
+    }
+}
+```
+
+### Вариант 3: Docker
+
+```bash
+# Сборка образа
+docker build -t delivery-shop .
+
+# Запуск с MySQL
+docker network create delivery-network
+
+docker run -d \
+  --name delivery-mysql \
+  --network delivery-network \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_DATABASE=delivery_shop \
+  -e MYSQL_USER=delivery_user \
+  -e MYSQL_PASSWORD=userpass \
+  mysql:8.0
+
+docker run -d \
+  --name delivery-shop \
+  --network delivery-network \
+  -p 80:80 \
+  -e DB_HOST=delivery-mysql \
+  -e DB_PORT=3306 \
+  -e DB_NAME=delivery_shop \
+  -e DB_USER=delivery_user \
+  -e DB_PASS=userpass \
+  delivery-shop
+```
+
+## ⚙️ Конфигурация
+
+### .env файл
+
+```env
+# Приложение
+APP_NAME=Delivery Shop
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://yourdomain.com
+
+# База данных
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=delivery_shop
+DB_USER=delivery_user
+DB_PASS=your_secure_password
+
+# JWT (для API)
+JWT_SECRET=your_random_jwt_secret_key_here
+
+# Почта (для уведомлений)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+```
+
+## 🔒 Безопасность
+
+- ✅ PDO с подготовленными запросами (защита от SQL-инъекций)
+- ✅ CSRF токены для форм
+- ✅ Password hashing (bcrypt)
+- ✅ Защита .env файла в .htaccess
+- ✅ Заголовки безопасности (X-Frame-Options, X-XSS-Protection)
+
+## 📱 WhatsApp уведомления через Twilio
+
+Проект поддерживает отправку уведомлений в WhatsApp при:
+- 📦 Создании нового заказа
+- 🔄 Изменении статуса заказа
+- 🏃 Регистрации нового курьера
+
+### Пошаговая настройка Twilio
+
+#### 1. Регистрация на Twilio
+
+1. Перейдите на [Twilio Console](https://console.twilio.com)
+2. Зарегистрируйтесь (бесплатный trial даёт $15.95 на тесты)
+3. Подтвердите email и телефон
+
+#### 2. Активация WhatsApp Sandbox
+
+1. В консоли перейдите: **Messaging → Try it out → Send a WhatsApp message**
+2. Отсканируйте QR-код или отправьте сообщение на указанный номер
+3. После подключения вы увидите **Twilio WhatsApp номер** (обычно `+14155238886`)
+
+#### 3. Получение учётных данных
+
+1. Перейдите на [Dashboard](https://console.twilio.com)
+2. Скопируйте:
+   - **Account SID** — идентификатор аккаунта
+   - **Auth Token** — нажмите "Show" чтобы увидеть
+
+#### 4. Настройка .env
+
+```env
+# Настройки WhatsApp через Twilio
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Twilio WhatsApp номер (из sandbox или купленный)
+TWILIO_WHATSAPP_FROM=+14155238886
+# Ваш WhatsApp номер для получения уведомлений
+TWILIO_WHATSAPP_TO=+77001234567
+```
+
+### Важно для Sandbox!
+
+В режиме **Sandbox** вы можете отправлять сообщения только на подтверждённые номера. Чтобы добавить номер:
+
+1. Перейдите в **Messaging → Settings → WhatsApp Sandbox**
+2. Нажмите **"Add a new phone number"**
+3. Отправьте код подтверждения с телефона
+
+### Переход на Production
+
+Для отправки на любые номера нужно:
+
+1. **Купить WhatsApp номер** в Twilio (~$0.50-2/мес)
+2. **Подключить WhatsApp Business API** (требуется верификация бизнеса)
+3. Обновить `TWILIO_WHATSAPP_FROM` на купленный номер
+
+### Примеры уведомлений
+
+**Новый заказ:**
+```
+🛒 *НОВЫЙ ЗАКАЗ #123*
+
+📍 *Адрес:* ул. Абая 123, кв 5
+📞 *Телефон:* +7 700 123 4567
+
+📦 *Товары:*
+• Молоко 1л x2 = 800 ₸
+• Хлеб белый x1 = 250 ₸
+
+🚗 *Доставка:* 500 ₸
+💰 *Итого:* 1 550 ₸
+
+⏰ 30.03.2026 22:00
+```
+
+**Изменение статуса:**
+```
+🚗 *Заказ #123*
+Статус: *В пути*
+📍 Адрес: ул. Абая 123
+⏰ 30.03.2026 22:15
+```
+
+### Тестирование
+
+```php
+// Проверка конфигурации
+$whatsapp = new \App\Core\WhatsApp();
+var_dump($whatsapp->getConfigStatus());
+
+// Отправка тестового сообщения
+$whatsapp->sendMessage('Тест из Delivery Shop!');
+```
+
+### Цены Twilio (ориентировочно)
+
+| Тип | Цена |
+|-----|------|
+| WhatsApp Sandbox | Бесплатно (только на свой номер) |
+| WhatsApp номер | ~$0.50-2/мес |
+| Исходящее сообщение | ~$0.005-0.01 за сообщение |
+| Входящее сообщение | Бесплатно |
+
+## 📱 Скриншоты
+
+<!-- Добавьте скриншоты вашего приложения -->
+
+## 👥 Роли пользователей
+
+| Роль | Описание |
+|------|----------|
+| `user` | Клиент - просмотр каталога, оформление заказов |
+| `courier` | Курьер - доставка заказов, GPS трекинг |
+| `picker` | Сборщик - сборка заказов |
+| `admin` | Администратор - полный доступ |
+
+## 📞 Поддержка
+
+Если у вас есть вопросы или предложения, создайте Issue в репозитории.
+
+## 📄 Лицензия
+
+MIT License

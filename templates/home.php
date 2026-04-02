@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Delivery - Доставка продуктов</title>
+    <?php include __DIR__ . '/pwa-head.php'; ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -334,8 +335,88 @@
     </nav>
 
     <script>
-        // Check if user is logged in
+        // ==================== PUSH УВЕДОМЛЕНИЯ ====================
         const isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+        
+        // Запрос разрешения на push-уведомления
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Браузер не поддерживает уведомления');
+                return false;
+            }
+            
+            if (Notification.permission === 'granted') {
+                return true;
+            }
+            
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                return permission === 'granted';
+            }
+            
+            return false;
+        }
+        
+        // Показать push-уведомление
+        function showPushNotification(title, body, icon = '/favicon.ico', data = null) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: icon,
+                    badge: icon,
+                    tag: data?.tag || 'default',
+                    data: data,
+                    requireInteraction: data?.requireInteraction || false
+                });
+                
+                notification.onclick = function(event) {
+                    event.preventDefault();
+                    window.focus();
+                    if (data?.url) {
+                        window.location.href = data.url;
+                    }
+                    notification.close();
+                };
+                
+                // Автоматически закрыть через 10 секунд
+                setTimeout(() => notification.close(), 10000);
+                
+                return notification;
+            }
+            return null;
+        }
+        
+        // Проверка новых уведомлений и показ push
+        let lastNotificationCheck = null;
+        async function checkAndShowPushNotifications() {
+            if (!isLoggedIn || Notification.permission !== 'granted') return;
+            
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const notifications = await response.json();
+                    const newNotifications = notifications.filter(n => {
+                        if (n.read) return false;
+                        const createdAt = new Date(n.created_at);
+                        return !lastNotificationCheck || createdAt > lastNotificationCheck;
+                    });
+                    
+                    // Показываем только последние 3 уведомления
+                    newNotifications.slice(0, 3).forEach(n => {
+                        showPushNotification(n.title, n.message, '/favicon.ico', {
+                            tag: 'notification-' + n.id,
+                            url: n.data?.order_id ? '/orders' : null
+                        });
+                    });
+                    
+                    lastNotificationCheck = new Date();
+                }
+            } catch (error) {
+                console.error('Ошибка проверки уведомлений:', error);
+            }
+        }
+        
+        // ==================== ОСНОВНОЙ КОД ====================
         
         let searchTimeout;
         
@@ -583,7 +664,7 @@
             fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Clear cart if user is not logged in
             if (!isLoggedIn) {
                 localStorage.removeItem('cart');
@@ -610,8 +691,21 @@
                 updateNotificationBadge();
             }, 100);
             
+            // Запрос разрешения на push-уведомления для авторизованных пользователей
+            if (isLoggedIn) {
+                const granted = await requestNotificationPermission();
+                if (granted) {
+                    console.log('Push-уведомления включены');
+                    // Проверяем уведомления каждые 30 секунд
+                    setInterval(checkAndShowPushNotifications, 30000);
+                    // Первая проверка через 5 секунд
+                    setTimeout(checkAndShowPushNotifications, 5000);
+                }
+            }
+            
             setInterval(updateNotificationBadge, 30000);
         });
     </script>
+    <?php include __DIR__ . '/pwa-scripts.php'; ?>
 </body>
 </html>

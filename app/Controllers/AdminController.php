@@ -6,6 +6,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Security;
 use App\Core\Validator;
+use App\Core\WhatsApp;
+use App\Core\RateLimiter;
 use App\Models\UserModel;
 use App\Models\ProductModel;
 use App\Models\CategoryModel;
@@ -55,6 +57,14 @@ class AdminController extends Controller
             return $error;
         }
         
+        // Проверка rate limiting
+        if (RateLimiter::tooManyAttempts('upload')) {
+            $seconds = RateLimiter::availableIn('upload');
+            return $this->error("Слишком много загрузок. Попробуйте через {$seconds} секунд", 429);
+        }
+        
+        RateLimiter::attempt('upload');
+        
         if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
             return $this->error('Файл не загружен', 400);
         }
@@ -66,8 +76,19 @@ class AdminController extends Controller
             return $this->error('Разрешены только изображения (JPEG, PNG, GIF, WebP)', 400);
         }
         
-        if ($file['size'] > 5 * 1024 * 1024) {
+        // Максимальный размер файла - 5MB
+        $maxSize = 5 * 1024 * 1024;
+        if ($file['size'] > $maxSize) {
             return $this->error('Размер файла не должен превышать 5MB', 400);
+        }
+        
+        // Дополнительная проверка MIME-типа по содержимому
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $realMime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($realMime, $allowedTypes)) {
+            return $this->error('Некорректный тип файла', 400);
         }
         
         $uploadDir = __DIR__ . '/../../uploads/products/';
@@ -190,6 +211,65 @@ class AdminController extends Controller
         return $this->json(['success' => true]);
     }
     
+    /**
+     * API: Импорт товаров из CSV
+     */
+    public function importProducts(Request $request): Response
+    {
+        $error = $this->requireAdmin();
+        if ($error !== null) {
+            return $error;
+        }
+        
+        $data = $request->json();
+        $products = $data['products'] ?? [];
+        
+        if (empty($products) || !is_array($products)) {
+            return $this->error('Нет данных для импорта', 400);
+        }
+        
+        // Получаем все категории для проверки
+        $categories = $this->categoryModel->getAll();
+        $categoryIds = array_column($categories, 'id');
+        
+        $imported = 0;
+        $errors = [];
+        
+        foreach ($products as $index => $product) {
+            // Проверяем обязательные поля
+            if (empty($product['name']) || empty($product['price']) || empty($product['category_id'])) {
+                $errors[] = "Строка " . ($index + 1) . ": не все обязательные поля заполнены";
+                continue;
+            }
+            
+            // Проверяем существование категории
+            if (!in_array(intval($product['category_id']), $categoryIds)) {
+                $errors[] = "Строка " . ($index + 1) . ": категория ID {$product['category_id']} не найдена";
+                continue;
+            }
+            
+            try {
+                $this->productModel->create([
+                    'name' => Security::sanitize($product['name']),
+                    'price' => floatval($product['price']),
+                    'category_id' => intval($product['category_id']),
+                    'image_url' => '',
+                    'is_weighted' => isset($product['is_weighted']) ? intval($product['is_weighted']) : 0
+                ]);
+                $imported++;
+            } catch (\Exception $e) {
+                $errors[] = "Строка " . ($index + 1) . ": ошибка создания товара";
+            }
+        }
+        
+        return $this->json([
+            'success' => true,
+            'imported' => $imported,
+            'total' => count($products),
+            'errors' => $errors
+        ]);
+    }
+    
     // ==================== КАТЕГОРИИ ====================
     
     /**
@@ -281,7 +361,26 @@ class AdminController extends Controller
             return $error;
         }
         
-        return $this->json($this->orderModel->getAll());
+        $orders = $this->orderModel->getAll();
+        $users = $this->userModel->getAll();
+        $userMap = [];
+        foreach ($users as $user) {
+            $userMap[$user['id']] = $user;
+        }
+        
+        // Добавляем информацию о курьере в каждый заказ
+        foreach ($orders as &$order) {
+            if (!empty($order['courier_id']) && isset($userMap[$order['courier_id']])) {
+                $courier = $userMap[$order['courier_id']];
+                $order['courier_name'] = $courier['name'] ?? 'Неизвестный';
+                $order['courier_phone'] = $courier['phone'] ?? '';
+            } else {
+                $order['courier_name'] = null;
+                $order['courier_phone'] = null;
+            }
+        }
+        
+        return $this->json($orders);
     }
     
     /**
@@ -321,6 +420,12 @@ class AdminController extends Controller
                 "Заказ #{$id} готов к доставке. Адрес: {$order['address']}",
                 ['order_id' => $id]
             );
+        }
+        
+        // Отправляем уведомление в WhatsApp при изменении статуса
+        $whatsapp = new WhatsApp();
+        if ($whatsapp->isAvailable() && $previousStatus !== $status) {
+            $whatsapp->notifyOrderStatus($id, $status);
         }
         
         // Если статус "ДОСТАВЛЕН" - перемещаем заказ в архив

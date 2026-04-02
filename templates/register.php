@@ -225,7 +225,8 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    window.location.href = '/';
+                    // Редирект после успешной регистрации
+                    window.location.href = data.redirect || '/profile';
                 } else {
                     errorEl.textContent = data.error || 'Ошибка регистрации';
                     errorEl.classList.remove('hidden');

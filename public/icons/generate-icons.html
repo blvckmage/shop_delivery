@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+    <style>canvas { margin: 10px; border: 1px solid #ccc; }</style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Откройте консоль и запустите: generateAllIcons()</p>
+    <p>Затем сохраните каждое изображение правой кнопкой мыши</p>
+    <div id="canvases"></div>
+    
+    <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    
+    function generateIcon(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, '#FF7A3D');
+        gradient.addColorStop(1, '#F05A1A');
+        
+        // Rounded rect background
+        const radius = size * 0.1875;
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(size - radius, 0);
+        ctx.quadraticCurveTo(size, 0, size, radius);
+        ctx.lineTo(size, size - radius);
+        ctx.quadraticCurveTo(size, size, size - radius, size);
+        ctx.lineTo(radius, size);
+        ctx.quadraticCurveTo(0, size, 0, size - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Box icon
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = size * 0.046875;
+        ctx.lineJoin = 'round';
+        
+        const cx = size / 2;
+        const cy = size / 2;
+        const boxSize = size * 0.625;
+        const boxTop = size * 0.15625;
+        
+        // Draw box
+        ctx.beginPath();
+        ctx.moveTo(cx, boxTop);
+        ctx.lineTo(cx + boxSize/2, boxTop + boxSize * 0.25);
+        ctx.lineTo(cx + boxSize/2, boxTop + boxSize * 0.75);
+        ctx.lineTo(cx, boxTop + boxSize);
+        ctx.lineTo(cx - boxSize/2, boxTop + boxSize * 0.75);
+        ctx.lineTo(cx - boxSize/2, boxTop + boxSize * 0.25);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Top flap
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(cx, boxTop);
+        ctx.lineTo(cx + boxSize/2, boxTop + boxSize * 0.25);
+        ctx.lineTo(cx, boxTop + boxSize * 0.5);
+        ctx.lineTo(cx - boxSize/2, boxTop + boxSize * 0.25);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Center line
+        ctx.beginPath();
+        ctx.moveTo(cx, boxTop + boxSize * 0.5);
+        ctx.lineTo(cx, boxTop + boxSize);
+        ctx.stroke();
+        
+        return canvas;
+    }
+    
+    function generateAllIcons() {
+        const container = document.getElementById('canvases');
+        container.innerHTML = '';
+        
+        sizes.forEach(size => {
+            const canvas = generateIcon(size);
+            const div = document.createElement('div');
+            div.innerHTML = `<h3>${size}x${size}</h3>`;
+            div.appendChild(canvas);
+            
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.textContent = 'Download';
+            div.appendChild(link);
+            
+            container.appendChild(div);
+        });
+    }
+    
+    // Auto-generate on load
+    window.onload = generateAllIcons;
+    </script>
+</body>
+</html>

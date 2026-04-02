@@ -40,8 +40,7 @@ class CategoryModel
     public function create(array $data): int
     {
         $category = [
-            'name' => Security::sanitize($data['name']),
-            'created_at' => date('c')
+            'name' => Security::sanitize($data['name'])
         ];
         
         return $this->db->insert($this->table, $category);
@@ -56,6 +55,10 @@ class CategoryModel
         
         if (isset($data['name'])) {
             $updates['name'] = Security::sanitize($data['name']);
+        }
+        
+        if (empty($updates)) {
+            return false;
         }
         
         return $this->db->update($this->table, $id, $updates);

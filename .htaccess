@@ -1,6 +1,59 @@
 RewriteEngine On
 RewriteBase /
 
+# =====================================================
+# Безопасность
+# =====================================================
+
+# Запрет доступа к скрытым файлам
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Запрет доступа к .env
+<FilesMatch "^\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Запрет доступа к JSON файлам в data/ (но не в public/)
+RewriteCond %{REQUEST_URI} ^/data/
+<FilesMatch "\.json$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Запрет доступа к файлам базы данных
+<FilesMatch "\.(sqlite|db|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Запрет доступа к backup файлам
+<FilesMatch "\.(bak|backup|old|orig|save|swp)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# =====================================================
+# HTTPS перенаправление (раскомментируйте для production)
+# =====================================================
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP:X-Forwarded-Proto} !https
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# =====================================================
+# Перенаправление на index.php
+# =====================================================
+
+# PWA файлы из public/ (должно быть ПЕРЕД проверкой существования файлов)
+RewriteRule ^manifest\.json$ public/manifest.json [L]
+RewriteRule ^sw\.js$ public/sw.js [L]
+RewriteRule ^icons/(.*)$ public/icons/$1 [L]
+RewriteRule ^js/(.*)$ public/js/$1 [L]
+RewriteRule ^screenshots/(.*)$ public/screenshots/$1 [L]
+
 # Разрешаем доступ к статическим файлам в uploads
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^uploads/(.*)$ - [L]
@@ -11,3 +64,34 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # Все остальные запросы идут на index.php
 RewriteRule ^(.*)$ index.php [QSA,L]
+
+# =====================================================
+# Заголовки безопасности
+# =====================================================
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# =====================================================
+# Сжатие GZIP
+# =====================================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# =====================================================
+# Кеширование статических файлов
+# =====================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
