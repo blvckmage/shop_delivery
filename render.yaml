@@ -4,6 +4,7 @@ services:
     name: delivery-shop
     env: docker
     plan: free
+    region: oregon
     buildFilter:
       paths:
         - .
@@ -15,7 +16,10 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: DB_HOST
-        value: delivery-shop-db
+        fromService:
+          name: delivery-shop-db
+          type: pserv
+          property: host
       - key: DB_PORT
         value: "3306"
       - key: DB_NAME
@@ -45,6 +49,7 @@ services:
     name: delivery-shop-db
     env: image
     plan: free
+    region: oregon
     image:
       url: mysql:8.0
     envVars:
