@@ -26,6 +26,9 @@ COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN mkdir -p /var/www/html/uploads/products && \
     mkdir -p /var/log/app
 
+# Создаём файл ports.conf для поддержки динамического порта
+RUN echo "Listen 80" > /etc/apache2/ports.conf
+
 # Права доступа
 RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html && \

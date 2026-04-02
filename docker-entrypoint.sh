@@ -3,8 +3,10 @@ set -e
 
 echo "=== Starting Delivery Shop ==="
 
-# Ждём готовности MySQL
+# Ждём готовности MySQL с таймаутом (максимум 60 секунд)
 echo "Waiting for MySQL..."
+MAX_ATTEMPTS=30
+ATTEMPT=0
 until php -r "
     try {
         \$pdo = new PDO(
@@ -17,11 +19,18 @@ until php -r "
         exit(1);
     }
 " 2>/dev/null; do
-    echo "MySQL is unavailable - sleeping"
+    ATTEMPT=$((ATTEMPT + 1))
+    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+        echo "MySQL timeout after $MAX_ATTEMPTS attempts - starting anyway..."
+        break
+    fi
+    echo "MySQL is unavailable - sleeping ($ATTEMPT/$MAX_ATTEMPTS)"
     sleep 2
 done
 
-echo "MySQL is up!"
+if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+    echo "MySQL is up!"
+fi
 
 # Инициализация БД если нужно
 if [ -f "/var/www/html/database/schema.sql" ]; then
@@ -91,6 +100,14 @@ if command -v crontab &> /dev/null; then
 fi
 
 echo "=== Starting Apache ==="
+
+# Render использует переменную PORT
+if [ -n "$PORT" ]; then
+    echo "Using PORT: $PORT"
+    # Настройка Apache на нужный порт
+    sed -i "s/:80/:$PORT/g" /etc/apache2/sites-available/000-default.conf
+    sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf 2>/dev/null || true
+fi
 
 # Запускаем Apache
 exec "$@"
