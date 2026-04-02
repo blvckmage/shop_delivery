@@ -243,6 +243,60 @@ class WhatsApp
 
         return $this->sendMessage($message);
     }
+    
+    /**
+     * Отправить уведомление курьеру о новом заказе
+     */
+    public function notifyCourierNewOrder(string $phone, array $order): bool
+    {
+        // items может быть уже массивом или JSON строкой
+        $items = $order['items'] ?? [];
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?? [];
+        }
+        
+        $itemsList = '';
+        foreach ($items as $item) {
+            $itemsList .= "• {$item['name']} x{$item['quantity']}\n";
+        }
+
+        $message = "🚗 *НОВЫЙ ЗАКАЗ ДЛЯ ДОСТАВКИ #{$order['id']}*\n\n";
+        $message .= "📍 *Адрес:* {$order['address']}\n\n";
+        $message .= "📦 *Товары:*\n{$itemsList}\n";
+        $message .= "💰 *Сумма:* " . number_format($order['total_price'] ?? $order['total'] ?? 0, 0, '', ' ') . " ₸\n\n";
+        $message .= "⏰ " . date('d.m.Y H:i');
+
+        return $this->sendToNumber($phone, $message);
+    }
+    
+    /**
+     * Отправить уведомление курьеру о смене статуса заказа
+     */
+    public function notifyCourierOrderStatus(string $phone, int $orderId, string $status): bool
+    {
+        $statusNames = [
+            'СОЗДАН' => 'Создан',
+            'СБОРКА' => 'На сборке',
+            'ОЖИДАНИЕ_КУРЬЕРА' => 'Ожидает вас',
+            'В_ПУТИ' => 'В пути',
+            'ДОСТАВЛЕН' => 'Доставлен',
+            'ОТМЕНЕН' => 'Отменён'
+        ];
+
+        $statusName = $statusNames[$status] ?? $status;
+        $emoji = $status === 'ОЖИДАНИЕ_КУРЬЕРА' ? '🚶' : '📦';
+
+        $message = "{$emoji} *Заказ #{$orderId}*\n";
+        $message .= "Статус: *{$statusName}*\n\n";
+        
+        if ($status === 'ОЖИДАНИЕ_КУРЬЕРА') {
+            $message .= "Заказ готов к доставке! Заберите его на точке.\n\n";
+        }
+        
+        $message .= "⏰ " . date('d.m.Y H:i');
+
+        return $this->sendToNumber($phone, $message);
+    }
 
     /**
      * Отправить кастомное уведомление

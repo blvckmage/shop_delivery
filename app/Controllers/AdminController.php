@@ -426,6 +426,19 @@ class AdminController extends Controller
         $whatsapp = new WhatsApp();
         if ($whatsapp->isAvailable() && $previousStatus !== $status) {
             $whatsapp->notifyOrderStatus($id, $status);
+            
+            // Уведомление назначенному курьеру
+            if (!empty($order['courier_id'])) {
+                $courier = $this->userModel->findById($order['courier_id']);
+                if ($courier && !empty($courier['phone'])) {
+                    $courierPhone = $courier['whatsapp_phone'] ?? $courier['phone'];
+                    
+                    // При статусе "ОЖИДАНИЕ_КУРЬЕРА" - уведомляем что заказ готов
+                    if ($status === OrderModel::STATUS_AWAITING_COURIER) {
+                        $whatsapp->notifyCourierOrderStatus($courierPhone, $id, $status);
+                    }
+                }
+            }
         }
         
         // Если статус "ДОСТАВЛЕН" - перемещаем заказ в архив

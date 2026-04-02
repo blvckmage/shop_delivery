@@ -496,13 +496,36 @@
             `).join('');
         }
 
+        let ordersPollingInterval = null;
+        
         async function loadOrders() {
             try {
                 const response = await fetch('/api/admin/orders');
                 const orders = await response.json();
                 renderOrders('orders-list', orders);
+                
+                // Запускаем polling для real-time обновления
+                if (!ordersPollingInterval) {
+                    ordersPollingInterval = setInterval(async () => {
+                        try {
+                            const response = await fetch('/api/admin/orders');
+                            const orders = await response.json();
+                            renderOrders('orders-list', orders);
+                        } catch (e) {
+                            console.error('Polling error:', e);
+                        }
+                    }, 5000); // Обновление каждые 5 секунд
+                }
             } catch (error) {
                 document.getElementById('orders-list').innerHTML = '<p class="text-gray-500 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+        
+        // Остановка polling при уходе со страницы заказов
+        function stopOrdersPolling() {
+            if (ordersPollingInterval) {
+                clearInterval(ordersPollingInterval);
+                ordersPollingInterval = null;
             }
         }
 
