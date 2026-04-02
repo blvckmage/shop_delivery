@@ -22,6 +22,9 @@ class WhatsApp
     private string $toNumber;
     private bool $enabled;
     private ?UserModel $userModel;
+    
+    /** Часовой пояс Астана (UTC+5) */
+    private const TIMEZONE = 'Asia/Almaty';
 
     public function __construct(?UserModel $userModel = null)
     {
@@ -137,6 +140,15 @@ class WhatsApp
     }
 
     /**
+     * Получить текущее время в часовом поясе Астана
+     */
+    private function getLocalTime(string $format = 'd.m.Y H:i'): string
+    {
+        $datetime = new \DateTime('now', new \DateTimeZone(self::TIMEZONE));
+        return $datetime->format($format);
+    }
+
+    /**
      * Нормализовать номер телефона для WhatsApp
      */
     private function normalizePhone(string $phone): string
@@ -188,7 +200,7 @@ class WhatsApp
         }
         
         $message .= "💰 *Итого:* " . number_format($grandTotal, 0, '', ' ') . " ₸\n\n";
-        $message .= "⏰ " . date('d.m.Y H:i');
+        $message .= "⏰ " . $this->getLocalTime();
 
         return $this->sendMessage($message);
     }
@@ -226,7 +238,7 @@ class WhatsApp
             $message .= "📍 Адрес: {$address}\n";
         }
         
-        $message .= "⏰ " . date('d.m.Y H:i');
+        $message .= "⏰ " . $this->getLocalTime();
 
         return $this->sendMessage($message);
     }
@@ -239,7 +251,7 @@ class WhatsApp
         $message = "🏃 *НОВЫЙ КУРЬЕР*\n\n";
         $message .= "👤 Имя: {$name}\n";
         $message .= "📞 Телефон: {$phone}\n";
-        $message .= "⏰ " . date('d.m.Y H:i');
+        $message .= "⏰ " . $this->getLocalTime();
 
         return $this->sendMessage($message);
     }
@@ -264,7 +276,7 @@ class WhatsApp
         $message .= "📍 *Адрес:* {$order['address']}\n\n";
         $message .= "📦 *Товары:*\n{$itemsList}\n";
         $message .= "💰 *Сумма:* " . number_format($order['total_price'] ?? $order['total'] ?? 0, 0, '', ' ') . " ₸\n\n";
-        $message .= "⏰ " . date('d.m.Y H:i');
+        $message .= "⏰ " . $this->getLocalTime();
 
         return $this->sendToNumber($phone, $message);
     }
@@ -293,7 +305,7 @@ class WhatsApp
             $message .= "Заказ готов к доставке! Заберите его на точке.\n\n";
         }
         
-        $message .= "⏰ " . date('d.m.Y H:i');
+        $message .= "⏰ " . $this->getLocalTime();
 
         return $this->sendToNumber($phone, $message);
     }
@@ -303,7 +315,7 @@ class WhatsApp
      */
     public function notify(string $title, string $body): bool
     {
-        $message = "📢 *{$title}*\n\n{$body}\n\n⏰ " . date('d.m.Y H:i');
+        $message = "📢 *{$title}*\n\n{$body}\n\n⏰ " . $this->getLocalTime();
         return $this->sendMessage($message);
     }
 
