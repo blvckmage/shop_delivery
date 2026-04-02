@@ -244,6 +244,38 @@
                                placeholder="Не указан">
                     </div>
                     
+                    <?php if (($user['role'] ?? 'user') === 'courier'): ?>
+                    <div class="border-t border-gray-100 pt-4 mt-4">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-3">📱 Уведомления WhatsApp</h3>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Номер для WhatsApp уведомлений
+                            </label>
+                            <input type="tel" 
+                                   id="whatsapp_phone" 
+                                   value="<?php echo htmlspecialchars($user['whatsapp_phone'] ?? ''); ?>"
+                                   class="input-field w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 outline-none text-gray-700"
+                                   placeholder="+7 700 123 45 67">
+                            <p class="text-xs text-gray-500 mt-1">
+                                Оставьте пустым, чтобы использовать основной номер телефона
+                            </p>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" 
+                                       id="whatsapp_notifications" 
+                                       <?php echo !empty($user['whatsapp_notifications']) ? 'checked' : ''; ?>
+                                       class="w-5 h-5 rounded border-gray-300 text-warm-500 focus:ring-warm-500">
+                                <span class="text-sm text-gray-700">
+                                    Получать уведомления о заказах в WhatsApp
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div id="message" class="hidden rounded-xl p-3 text-sm"></div>
                     
                     <button type="submit" 
@@ -405,6 +437,8 @@
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const email = document.getElementById('email').value;
+            const whatsappPhone = document.getElementById('whatsapp_phone')?.value || '';
+            const whatsappNotifications = document.getElementById('whatsapp_notifications')?.checked || false;
             const messageEl = document.getElementById('message');
             const submitBtn = document.getElementById('submitBtn');
             
@@ -415,7 +449,13 @@
                 const response = await fetch('/api/profile/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, email })
+                    body: JSON.stringify({ 
+                        name, 
+                        phone, 
+                        email,
+                        whatsapp_phone: whatsappPhone,
+                        whatsapp_notifications: whatsappNotifications
+                    })
                 });
                 
                 const data = await response.json();

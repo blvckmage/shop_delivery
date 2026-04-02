@@ -370,6 +370,12 @@ class SiteController extends Controller
                 if (isset($data['address'])) {
                     $user['address'] = \App\Core\Security::sanitize($data['address']);
                 }
+                if (isset($data['whatsapp_phone'])) {
+                    $user['whatsapp_phone'] = \App\Core\Security::sanitize($data['whatsapp_phone']);
+                }
+                if (isset($data['whatsapp_notifications'])) {
+                    $user['whatsapp_notifications'] = $data['whatsapp_notifications'] ? 1 : 0;
+                }
                 break;
             }
         }
