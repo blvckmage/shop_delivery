@@ -13,21 +13,15 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: DB_HOST
-        fromService:
-          name: delivery-shop-db
-          type: pserv
-          property: host
+        sync: false
       - key: DB_PORT
         value: "3306"
       - key: DB_NAME
         value: delivery_shop
       - key: DB_USER
-        value: delivery_user
+        sync: false
       - key: DB_PASS
-        fromService:
-          name: delivery-shop-db
-          type: pserv
-          envVarKey: MYSQL_PASSWORD
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: SESSION_LIFETIME
@@ -40,21 +34,3 @@ services:
         sync: false
       - key: TWILIO_WHATSAPP_TO
         sync: false
-
-  # База данных MySQL
-  - type: pserv
-    name: delivery-shop-db
-    env: image
-    plan: free
-    region: oregon
-    image:
-      url: mysql:8.0
-    envVars:
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-      - key: MYSQL_DATABASE
-        value: delivery_shop
-      - key: MYSQL_USER
-        value: delivery_user
-      - key: MYSQL_PASSWORD
-        generateValue: true
