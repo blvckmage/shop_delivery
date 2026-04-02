@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
 # Включаем модули Apache
-RUN a2enmod rewrite headers deflate expires
+RUN a2enmod rewrite headers deflate expires alias
 
 # Устанавливаем расширения PHP и mysql-client
 RUN apt-get update && apt-get install -y default-mysql-client && rm -rf /var/lib/apt/lists/*
