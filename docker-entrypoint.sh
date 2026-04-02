@@ -3,9 +3,13 @@ set -e
 
 echo "=== Starting Delivery Shop ==="
 
-# Ждём готовности MySQL с таймаутом (максимум 60 секунд)
+# Ждём готовности MySQL с таймаутом (максимум 180 секунд для free tier)
 echo "Waiting for MySQL..."
-MAX_ATTEMPTS=30
+echo "DB_HOST: $DB_HOST"
+echo "DB_PORT: $DB_PORT"
+echo "DB_NAME: $DB_NAME"
+echo "DB_USER: $DB_USER"
+MAX_ATTEMPTS=90
 ATTEMPT=0
 until php -r "
     try {
