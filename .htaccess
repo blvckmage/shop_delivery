@@ -43,12 +43,12 @@ RewriteRule ^data/.*\.json$ - [F,L]
 # Перенаправление на index.php
 # =====================================================
 
-# PWA файлы из public/ (должно быть ПЕРЕД проверкой существования файлов)
-RewriteRule ^manifest\.json$ public/manifest.json [L]
-RewriteRule ^sw\.js$ public/sw.js [L]
-RewriteRule ^icons/(.*)$ public/icons/$1 [L]
-RewriteRule ^js/(.*)$ public/js/$1 [L]
-RewriteRule ^screenshots/(.*)$ public/screenshots/$1 [L]
+# PWA файлы из public/
+RewriteRule ^manifest\.json$ public/manifest.json [END]
+RewriteRule ^sw\.js$ public/sw.js [END]
+RewriteRule ^icons/(.*)$ public/icons/$1 [END]
+RewriteRule ^js/(.*)$ public/js/$1 [END]
+RewriteRule ^screenshots/(.*)$ public/screenshots/$1 [END]
 
 # Разрешаем доступ к статическим файлам в uploads
 RewriteCond %{REQUEST_FILENAME} -f
