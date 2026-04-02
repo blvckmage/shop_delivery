@@ -2,18 +2,37 @@
 <html>
 <head>
     <title>Generate PWA Icons</title>
-    <style>canvas { margin: 10px; border: 1px solid #ccc; }</style>
+    <style>
+        body { font-family: system-ui; padding: 20px; max-width: 800px; margin: 0 auto; }
+        canvas { margin: 10px; border: 1px solid #ccc; }
+        .icon-row { display: flex; align-items: center; margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px; }
+        .icon-row canvas { margin: 0 20px 0 0; }
+        button { background: #FF7A3D; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #F05A1A; }
+        .maskable-info { background: #fff3cd; padding: 10px; border-radius: 8px; margin: 10px 0; }
+    </style>
 </head>
 <body>
-    <h1>PWA Icon Generator</h1>
-    <p>Откройте консоль и запустите: generateAllIcons()</p>
-    <p>Затем сохраните каждое изображение правой кнопкой мыши</p>
+    <h1>🚀 PWA Icon Generator</h1>
+    <p>Нажмите кнопку ниже чтобы скачать все иконки для PWA</p>
+    
+    <button onclick="downloadAllIcons()">📥 Скачать все иконки</button>
+    <button onclick="downloadMaskableIcons()">📦 Скачать maskable иконки</button>
+    
+    <div class="maskable-info">
+        <strong>Maskable иконки:</strong> Имеют отступы по 10% для адаптации под разные формы иконок на Android
+    </div>
+    
+    <h2>Regular Icons</h2>
     <div id="canvases"></div>
     
-    <script>
-    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    <h2>Maskable Icons</h2>
+    <div id="maskable-canvases"></div>
     
-    function generateIcon(size) {
+    <script>
+    const sizes = [192, 512];
+    
+    function generateIcon(size, maskable = false) {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -24,31 +43,38 @@
         gradient.addColorStop(0, '#FF7A3D');
         gradient.addColorStop(1, '#F05A1A');
         
+        // For maskable: add padding (10% on each side = 20% total)
+        const padding = maskable ? size * 0.1 : 0;
+        const iconSize = size - padding * 2;
+        const radius = iconSize * 0.1875;
+        
+        // Clear with transparent (for maskable)
+        ctx.clearRect(0, 0, size, size);
+        
         // Rounded rect background
-        const radius = size * 0.1875;
         ctx.beginPath();
-        ctx.moveTo(radius, 0);
-        ctx.lineTo(size - radius, 0);
-        ctx.quadraticCurveTo(size, 0, size, radius);
-        ctx.lineTo(size, size - radius);
-        ctx.quadraticCurveTo(size, size, size - radius, size);
-        ctx.lineTo(radius, size);
-        ctx.quadraticCurveTo(0, size, 0, size - radius);
-        ctx.lineTo(0, radius);
-        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.moveTo(padding + radius, padding);
+        ctx.lineTo(padding + iconSize - radius, padding);
+        ctx.quadraticCurveTo(padding + iconSize, padding, padding + iconSize, padding + radius);
+        ctx.lineTo(padding + iconSize, padding + iconSize - radius);
+        ctx.quadraticCurveTo(padding + iconSize, padding + iconSize, padding + iconSize - radius, padding + iconSize);
+        ctx.lineTo(padding + radius, padding + iconSize);
+        ctx.quadraticCurveTo(padding, padding + iconSize, padding, padding + iconSize - radius);
+        ctx.lineTo(padding, padding + radius);
+        ctx.quadraticCurveTo(padding, padding, padding + radius, padding);
         ctx.closePath();
         ctx.fillStyle = gradient;
         ctx.fill();
         
         // Box icon
         ctx.strokeStyle = 'white';
-        ctx.lineWidth = size * 0.046875;
+        ctx.lineWidth = iconSize * 0.046875;
         ctx.lineJoin = 'round';
         
         const cx = size / 2;
         const cy = size / 2;
-        const boxSize = size * 0.625;
-        const boxTop = size * 0.15625;
+        const boxSize = iconSize * 0.625;
+        const boxTop = cy - iconSize * 0.34375;
         
         // Draw box
         ctx.beginPath();
@@ -80,28 +106,56 @@
         return canvas;
     }
     
-    function generateAllIcons() {
+    function displayIcons() {
         const container = document.getElementById('canvases');
-        container.innerHTML = '';
+        const maskableContainer = document.getElementById('maskable-canvases');
         
         sizes.forEach(size => {
-            const canvas = generateIcon(size);
+            // Regular icon
             const div = document.createElement('div');
-            div.innerHTML = `<h3>${size}x${size}</h3>`;
+            div.className = 'icon-row';
+            const canvas = generateIcon(size, false);
+            div.innerHTML = `<span style="width: 100px"><strong>${size}x${size}</strong></span>`;
             div.appendChild(canvas);
-            
-            const link = document.createElement('a');
-            link.download = `icon-${size}x${size}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.textContent = 'Download';
-            div.appendChild(link);
-            
             container.appendChild(div);
+            
+            // Maskable icon
+            const maskableDiv = document.createElement('div');
+            maskableDiv.className = 'icon-row';
+            const maskableCanvas = generateIcon(size, true);
+            maskableDiv.innerHTML = `<span style="width: 100px"><strong>${size}x${size}</strong></span>`;
+            maskableDiv.appendChild(maskableCanvas);
+            maskableContainer.appendChild(maskableDiv);
         });
     }
     
-    // Auto-generate on load
-    window.onload = generateAllIcons;
+    function downloadCanvas(canvas, filename) {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+    
+    function downloadAllIcons() {
+        sizes.forEach((size, index) => {
+            setTimeout(() => {
+                const canvas = generateIcon(size, false);
+                downloadCanvas(canvas, `icon-${size}.png`);
+            }, index * 500);
+        });
+    }
+    
+    function downloadMaskableIcons() {
+        sizes.forEach((size, index) => {
+            setTimeout(() => {
+                const canvas = generateIcon(size, true);
+                downloadCanvas(canvas, `icon-maskable-${size}.png`);
+            }, index * 500);
+        });
+    }
+    
+    // Display on load
+    window.onload = displayIcons;
     </script>
 </body>
 </html>
