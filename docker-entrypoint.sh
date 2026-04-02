@@ -82,6 +82,26 @@ init_mysql() {
                 }
             " 2>/dev/null || true
             echo "Database schema initialized!"
+            
+            # Заполняем начальными данными
+            if [ -f "/var/www/html/database/seed.sql" ]; then
+                echo "Seeding initial data..."
+                php -r "
+                    try {
+                        \$pdo = new PDO(
+                            'mysql:host=' . getenv('DB_HOST') . ';port=' . getenv('DB_PORT') . ';dbname=' . getenv('DB_NAME'),
+                            getenv('DB_USER'),
+                            getenv('DB_PASS')
+                        );
+                        \$sql = file_get_contents('/var/www/html/database/seed.sql');
+                        \$pdo->exec(\$sql);
+                        echo 'Seed data applied';
+                    } catch (Exception \$e) {
+                        echo 'Error: ' . \$e->getMessage();
+                    }
+                " 2>/dev/null || true
+                echo "Seed data initialized!"
+            fi
         fi
     fi
     
